@@ -1,12 +1,12 @@
-# Veritier — MCP Integration (JavaScript)
+# Veritier - MCP Integration (JavaScript)
 
-Connect any MCP-compatible AI agent to Veritier's real-time fact-checking engine from JavaScript. The **Model Context Protocol (MCP)** is an open standard that lets AI agents discover and use external tools — Veritier exposes four tools for claim extraction and verification.
+Connect any MCP-compatible AI agent to Veritier's real-time fact-checking engine from JavaScript. The **Model Context Protocol (MCP)** is an open standard that lets AI agents discover and use external tools - Veritier exposes four tools for claim extraction and verification.
 
 📦 **API Docs:** [veritier.ai/docs](https://veritier.ai/docs) · 🔑 **Get your free key:** [veritier.ai/register](https://veritier.ai/register)
 
 ---
 
-## Remote HTTP (recommended — zero install)
+## Remote HTTP (recommended - zero install)
 
 Point your MCP client directly at the Veritier cloud endpoint. No local proxy, no setup.
 
@@ -77,7 +77,7 @@ Once connected, your agent has access to:
 
 | File | Description |
 |------|-------------|
-| [mcp_test.mjs](mcp_test.mjs) | Integration test — verifies MCP connectivity using native `fetch` |
+| [mcp_test.mjs](mcp_test.mjs) | Integration test - verifies MCP connectivity using native `fetch` |
 
 > **Note:** For a local stdio proxy (required by some MCP clients), see the [Python MCP folder](../../python/mcp/). The stdio proxy is Python-only because the `mcp` SDK used for stdio transport is a Python package.
 

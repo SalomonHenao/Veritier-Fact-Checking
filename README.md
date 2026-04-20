@@ -96,14 +96,14 @@ This repository contains ready-to-run examples in **Python** and **JavaScript**,
 | [batch_verify.mjs](javascript/use-cases/batch_verify.mjs) | Batch-process texts with rate-limit handling |
 | [webhook_receiver.mjs](javascript/webhooks/webhook_receiver.mjs) | Receive async results via HMAC-signed webhooks |
 
-### MCP Integration — Python → [`python/mcp/`](python/mcp/)
+### MCP Integration - Python → [`python/mcp/`](python/mcp/)
 
 | File | Description |
 |------|-------------|
 | [veritier_mcp_proxy.py](python/mcp/veritier_mcp_proxy.py) | Stdio proxy for MCP clients that need a local subprocess |
 | [veritier_mcp_test.py](python/mcp/veritier_mcp_test.py) | Integration test (stdio) |
 
-### MCP Integration — JavaScript → [`javascript/mcp/`](javascript/mcp/)
+### MCP Integration - JavaScript → [`javascript/mcp/`](javascript/mcp/)
 
 | File | Description |
 |------|-------------|
@@ -162,10 +162,10 @@ For clients that need a local subprocess, see the [stdio proxy](python/m-p/) in 
 -
 ## 🔑 Getting Started
 
-1. **Register** at [veritier.ai/register](https://veritier.ai/register) — free, no credit card
+1. **Register** at [veritier.ai/register](https://veritier.ai/register) - free, no credit card
 2. **Confirm** the verification email
 3. **Go to** [veritier.ai/dashboard](https://veritier.ai/dashboard)
-4. **Click** "Mint New Key" — copy the `vt_` key immediately (shown once)
+4. **Click** "Mint New Key" - copy the `vt_` key immediately (shown once)
 5. **Set** `VERITIER_API_KEY` in your environment:
    ```bash
    # Copy the template
@@ -193,13 +193,13 @@ For clients that need a local subprocess, see the [stdio proxy](python/m-p/) in 
 | **Pro** | $19.99/mo | 60 | 500 | 2,000 |
 | **Business** | $249.99/mo | 300 | 10,000 | 50,000 |
 
-Upgrade anytime at [veritier.ai/dashboard](https://veriti-r.ai/dashboard) — takes effect immediately.
+Upgrade anytime at [veritier.ai/dashboard](https://veriti-r.ai/dashboard) - takes effect immediately.
 
 ---
 
 ## 🔒 Security
 
-- API keys are prefixed `vt_` and SHA-256 hashed at rest — Veritier never stores the raw value
+- API keys are prefixed `vt_` and SHA-256 hashed at rest - Veritier never stores the raw value
 - Keys can be revoked at any time from the dashboard
 - Only send your key to `https://api.veritier.ai`
 - All inputs are screened by a content firewall before reaching the verification engine
@@ -216,7 +216,7 @@ Feed AI-generated text through Veritier before publishing. The [hallucination_au
 Pass any URL to the document verification endpoint. The [verify_article_url](python/use-cases/verify_article_url.py) example verifies every claim in a web page.
 
 ### Verify Against Internal Documents
-Use `grounding_mode: "references"` to check claims against your own private data — no web search involved. See the [private_references](python/use-cases/private_references.py) example.
+Use `grounding_mode: "references"` to check claims against your own private data - no web search involved. See the [private_references](python/use-cases/private_references.py) example.
 
 ### Content Moderation at Scale
 Process thousands of texts with automatic rate-limit handling. The [batch_verify](python/use-cases/batch_verify.py) example handles throttling and backoff for you.
@@ -226,4 +226,4 @@ Process thousands of texts with automatic rate-limit handling. The [batch_verify
 ## 📄 License
 
 The code in this repository is provided under the [MIT License](LICENSE).  
-The Veritier API is a commercial service — see [veritier.ai](https://veritier.ai) for terms.
+The Veritier API is a commercial service - see [veritier.ai](https://veritier.ai) for terms.

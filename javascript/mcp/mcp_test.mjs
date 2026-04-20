@@ -4,7 +4,7 @@
  * Verifies that the Veritier MCP Streamable HTTP endpoint is reachable
  * and responds correctly to MCP JSON-RPC requests using native fetch.
  *
- * This test uses the REMOTE HTTP transport (recommended) — no local
+ * This test uses the REMOTE HTTP transport (recommended) - no local
  * proxy or Python required.
  *
  * Usage:
