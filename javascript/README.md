@@ -37,6 +37,7 @@ cp ../.env.example .env
 |--------|-------------|-----|
 | [verify_article_url.mjs](use-cases/verify_article_url.mjs) | Verify all claims from a web page URL | `node use-cases/verify_article_url.mjs <URL>` |
 | [hallucination_audit.mjs](use-cases/hallucination_audit.mjs) | Catch LLM hallucinations before they reach users | `node use-cases/hallucination_audit.mjs` |
+| [disinformation_shield.mjs](use-cases/disinformation_shield.mjs) | Screen user content for false claims (Truth Firewall) | `node use-cases/disinformation_shield.mjs` |
 | [private_references.mjs](use-cases/private_references.mjs) | Verify against your own documents (no web search) | `node use-cases/private_references.mjs` |
 | [batch_verify.mjs](use-cases/batch_verify.mjs) | Batch-process texts with rate-limit handling | `node use-cases/batch_verify.mjs` |
 

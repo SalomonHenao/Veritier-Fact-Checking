@@ -37,6 +37,7 @@ cp ../.env.example .env
 |--------|-------------|-----|
 | [verify_article_url.py](use-cases/verify_article_url.py) | Verify all claims from a web page URL | `python use-cases/verify_article_url.py <URL>` |
 | [hallucination_audit.py](use-cases/hallucination_audit.py) | Catch LLM hallucinations before they reach users | `python use-cases/hallucination_audit.py` |
+| [disinformation_shield.py](use-cases/disinformation_shield.py) | Screen user content for false claims (Truth Firewall) | `python use-cases/disinformation_shield.py` |
 | [private_references.py](use-cases/private_references.py) | Verify against your own documents (no web search) | `python use-cases/private_references.py` |
 | [batch_verify.py](use-cases/batch_verify.py) | Batch-process texts with rate-limit handling | `python use-cases/batch_verify.py` |
 

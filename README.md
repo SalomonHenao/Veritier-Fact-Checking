@@ -80,6 +80,7 @@ This repository contains ready-to-run examples in **Python** and **JavaScript**,
 | [verify_text.py](python/quickstart/verify_text.py) | Verify claims against live web evidence |
 | [verify_article_url.py](python/use-cases/verify_article_url.py) | Fact-check all claims from a web page |
 | [hallucination_audit.py](python/use-cases/hallucination_audit.py) | 🔥 Catch LLM hallucinations before they reach users |
+| [disinformation_shield.py](python/use-cases/disinformation_shield.py) | 🛡 Screen content for false claims - truth firewall |
 | [private_references.py](python/use-cases/private_references.py) | Verify against your own documents (no web search) |
 | [batch_verify.py](python/use-cases/batch_verify.py) | Batch-process texts with rate-limit handling |
 | [webhook_receiver.py](python/webhooks/webhook_receiver.py) | Receive async results via HMAC-signed webhooks |
@@ -92,6 +93,7 @@ This repository contains ready-to-run examples in **Python** and **JavaScript**,
 | [verify_text.mjs](javascript/quickstart/verify_text.mjs) | Verify claims against live web evidence |
 | [verify_article_url.mjs](javascript/use-cases/verify_article_url.mjs) | Fact-check all claims from a web page |
 | [hallucination_audit.mjs](javascript/use-cases/hallucination_audit.mjs) | 🔥 Catch LLM hallucinations before they reach users |
+| [disinformation_shield.mjs](javascript/use-cases/disinformation_shield.mjs) | 🛡 Screen content for false claims - truth firewall |
 | [private_references.mjs](javascript/use-cases/private_references.mjs) | Verify against your own documents (no web search) |
 | [batch_verify.mjs](javascript/use-cases/batch_verify.mjs) | Batch-process texts with rate-limit handling |
 | [webhook_receiver.mjs](javascript/webhooks/webhook_receiver.mjs) | Receive async results via HMAC-signed webhooks |
@@ -210,7 +212,10 @@ Upgrade anytime at [veritier.ai/dashboard](https://veriti-r.ai/dashboard) - take
 ## 🏗 Use Cases
 
 ### Catch LLM Hallucinations
-Feed AI-generated text through Veritier before publishing. The [hallucination_aud-t](python/use-cases/hallucination_audit.py) example shows how to flag false claims automatically.
+Feed AI-generated text through Veritier before publishing. The [hallucination_audit](python/use-cases/hallucination_audit.py) example shows how to flag false claims automatically.
+
+### Truth Firewall (Stop Disinformation)
+Screen user-generated content, news snippets, or social media posts for false claims. Use the [disinformation_shield](python/use-cases/disinformation_shield.py) to catch misinformation before it spreads.
 
 ### Fact-Check Articles
 Pass any URL to the document verification endpoint. The [verify_article_url](python/use-cases/verify_article_url.py) example verifies every claim in a web page.
