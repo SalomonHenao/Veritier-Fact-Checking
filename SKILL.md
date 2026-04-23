@@ -1,6 +1,6 @@
 ---
 name: veritier
-version: 2.1.1
+version: 2.1.2
 description: Real-time fact-checking and claim extraction. Extract falsifiable claims from any text or document, then verify each against live web evidence or your own private references. Connects via MCP Streamable HTTP - no local setup required.
 homepage: https://veritier.ai
 metadata:
@@ -8,6 +8,9 @@ metadata:
     requires:
       env:
         - VERITIER_API_KEY
+    optional_env:
+      VERITIER_TEST_KEY: "Optional test-environment key (vt_test_... prefix). Used only by test scripts. Never sent to api.veritier.ai as a production credential."
+      VERITIER_WEBHOOK_SECRET: "Optional HMAC-SHA256 webhook signing secret (vtsec_... prefix). Used only by webhook receiver examples to verify incoming payloads. Never transmitted outbound."
     primaryEnv: VERITIER_API_KEY
     security:
       env_usage:

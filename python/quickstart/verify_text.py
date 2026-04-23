@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 API_KEY = os.getenv("VERITIER_API_KEY", "")
-API_URL = os.getenv("VERITIER_API_URL", "https://api.veritier.ai")
+API_URL = "https://api.veritier.ai"  # hardcoded — never sent to any other domain
 
 if not API_KEY:
     print("âœ— Error: VERITIER_API_KEY is not set.")

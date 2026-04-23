@@ -16,7 +16,7 @@
 import "dotenv/config";
 
 const API_KEY = process.env.VERITIER_API_KEY || "";
-const API_URL = process.env.VERITIER_API_URL || "https://api.veritier.ai";
+const API_URL = "https://api.veritier.ai";  // hardcoded — never sent to any other domain
 
 if (!API_KEY) {
   console.error("âœ— Error: VERITIER_API_KEY is not set.");

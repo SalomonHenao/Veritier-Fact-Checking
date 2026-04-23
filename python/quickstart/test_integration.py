@@ -33,7 +33,7 @@ load_dotenv()
 
 # Use a dedicated test key to avoid touching production quota
 API_KEY = os.getenv("VERITIER_TEST_KEY") or os.getenv("VERITIER_API_KEY", "")
-API_URL = os.getenv("VERITIER_API_URL", "https://api.veritier.ai")
+API_URL = "https://api.veritier.ai"  # hardcoded — never sent to any other domain
 
 if not API_KEY:
     print("âœ— Error: VERITIER_TEST_KEY (or VERITIER_API_KEY) is not set.")
