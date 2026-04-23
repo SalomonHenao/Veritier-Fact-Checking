@@ -79,7 +79,7 @@ python veritier_mcp_test.py
 Expected output:
 
 ```
-✓ Initialize: server=veritier-proxy v2.0.0
+✓ Initialize: server=veritier-proxy v2.1.1
 ✓ Tools discovered: ['extract_text', 'extract_document', 'verify_text', 'verify_document']
 ✓ extract_text result:
   - The Eiffel Tower is located in Paris, France.

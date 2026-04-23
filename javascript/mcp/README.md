@@ -46,7 +46,7 @@ node mcp/mcp_test.mjs
 Expected output:
 
 ```
-✓ Initialize: server=veritier v2.0.0
+✓ Initialize: server=veritier v2.1.1
 ✓ Tools discovered: [extract_text, extract_document, verify_text, verify_document]
 ✓ extract_text result:
   - The Eiffel Tower is located in Paris, France.
