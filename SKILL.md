@@ -9,6 +9,12 @@ metadata:
       env:
         - VERITIER_API_KEY
     primaryEnv: VERITIER_API_KEY
+    security:
+      env_usage:
+        VERITIER_API_KEY: "Bearer authentication token sent exclusively to https://api.veritier.ai as the Authorization header. Never forwarded to any other domain."
+      network_destinations:
+        - https://api.veritier.ai
+      network_destination_is_hardcoded: true
   veritier:
     emoji: "✅"
     category: fact-checking
