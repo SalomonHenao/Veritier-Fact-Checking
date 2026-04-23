@@ -1,6 +1,6 @@
 ---
 name: veritier
-version: 2.1.0
+version: 2.1.1
 description: Real-time fact-checking and claim extraction. Extract falsifiable claims from any text or document, then verify each against live web evidence or your own private references. Connects via MCP Streamable HTTP - no local setup required.
 homepage: https://veritier.ai
 metadata:
