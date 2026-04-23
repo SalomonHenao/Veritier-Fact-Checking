@@ -426,9 +426,9 @@ With a test key you can **omit** `mock_claims`/`mock_verdict` entirely. Veritier
 
 - Mock parameters are **only accepted with test keys** (`vt_test_...`). Sending them with a production key returns `400 Bad Request`.
 - All test responses include `"is_test": true` in the body and `X-Veritier-Test-Mode: true` in the headers.
-- **Rate limiting (RPM) applies in test mode.** Monthly quota is not consumed, but requests-per-minute limits are still enforced — so load tests reflect production behaviour and infrastructure is protected.
+- **Rate limiting (RPM) applies in test mode.** Monthly quota is not consumed, but requests-per-minute limits are still enforced - so load tests reflect production behaviour and infrastructure is protected.
 - Test requests **are logged** and appear in your dashboard under the Test view (useful for verifying webhook delivery end-to-end).
-- Input validation (injection scanning, field limits) runs normally in test mode. Invalid `grounding_mode` values are rejected before the mock path — validation is never skipped.
+- Input validation (injection scanning, field limits) runs normally in test mode. Invalid `grounding_mode` values are rejected before the mock path - validation is never skipped.
 
 **Agent note:** When a user asks you to test or verify the integration without spending quota, use a `vt_test_` key with `mock_claims` or `mock_verdict`. Do not use production keys for integration testing.
 
@@ -441,7 +441,7 @@ Test mode is fully webhook-aware, enabling end-to-end testing of your async deli
 
 2. **Call with `use_webhook: true`** using your `vt_test_...` key. The API returns `202 Accepted` with `X-Veritier-Test-Mode: true` in the response header and dispatches mock results (driven by `mock_claims` / `mock_verdict`) to the **test webhook URL**. No LLM is called. No quota is consumed.
 
-3. Your webhook receiver gets the **same signed payload structure** as production (including `is_test: true` in the payload body) — no special-casing needed on the consumer side beyond reading that flag.
+3. Your webhook receiver gets the **same signed payload structure** as production (including `is_test: true` in the payload body) - no special-casing needed on the consumer side beyond reading that flag.
 
 > A test key **never** delivers to the production webhook URL. Prod and test webhook routing is always fully isolated.
 

@@ -64,12 +64,12 @@ except ImportError:
 
 server = Server("veritier-mcp-proxy")
 
-# SECURITY: The API endpoint is a hardcoded constant — it is never user-configurable
+# SECURITY: The API endpoint is a hardcoded constant - it is never user-configurable
 # and cannot be overridden by tool input or any other env var.
 # VERITIER_API_KEY is used exclusively as a Bearer token in the Authorization header
 # sent to https://api.veritier.ai only. It is never logged, stored, or forwarded
 # to any other domain. This pattern is intentional API authentication, not exfiltration.
-API_URL = "https://api.veritier.ai"  # hardcoded — not user-configurable
+API_URL = "https://api.veritier.ai"  # hardcoded - not user-configurable
 API_KEY = os.getenv("VERITIER_API_KEY", "")  # declared in SKILL.md openclaw.requires.env
 
 if not API_KEY:

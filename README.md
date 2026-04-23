@@ -233,10 +233,10 @@ python python/quickstart/test_integration.py
 **Rules:**
 - Mock fields are **only accepted with test keys** - production keys return `400 Bad Request`.
 - Test responses include `"is_test": true` in the body and `X-Veritier-Test-Mode: true` header.
-- **RPM rate limiting applies in test mode.** Monthly quota is not consumed, but requests-per-minute limits are still enforced — production rate behaviour is fully replicated.
+- **RPM rate limiting applies in test mode.** Monthly quota is not consumed, but requests-per-minute limits are still enforced - production rate behaviour is fully replicated.
 - With a test key, omitting mock params **auto-activates** test mode with safe defaults (1 claim / true verdict).
 - Test requests are logged and visible in the Test view in your dashboard.
-- Input validation (injection scanning, field limits) runs normally. Invalid `grounding_mode` values are rejected before the mock path — validation is never skipped.
+- Input validation (injection scanning, field limits) runs normally. Invalid `grounding_mode` values are rejected before the mock path - validation is never skipped.
 
 ---
 

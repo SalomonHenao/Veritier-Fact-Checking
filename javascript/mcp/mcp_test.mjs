@@ -18,7 +18,7 @@
 import "dotenv/config";
 
 const API_KEY = process.env.VERITIER_API_KEY || "";
-const MCP_URL = "https://api.veritier.ai/mcp/";  // hardcoded — never sent to any other domain
+const MCP_URL = "https://api.veritier.ai/mcp/";  // hardcoded - never sent to any other domain
 
 if (!API_KEY) {
   console.error("✗ Error: VERITIER_API_KEY is not set.");
