@@ -76,3 +76,25 @@ if data.get("warnings"):
     print(f"⚠ Warnings: {'; '.join(data['warnings'])}")
 
 print(f"── Rate limit: {response.headers.get('RateLimit-Remaining', '?')} requests remaining this minute")
+
+# ── Zero-quota integration testing ──────────────────────────────────────────
+# Use a test API key (vt_test_...) and the mock_verdict field to test your
+# integration without consuming your monthly verification quota.
+# Returns 3 deterministic ClaimResult objects; no LLM is called.
+#
+# mock_verdict=True  → all verdicts True  (happy-path / success handling)
+# mock_verdict=False → all verdicts False (error-path / failure handling)
+#
+# Example (replace your prod key with a vt_test_... key from your dashboard):
+#
+#   response = httpx.post(
+#       f"{API_URL}/v1/verify",
+#       headers={"Authorization": f"Bearer {API_KEY}"},   # vt_test_... key
+#       json={"text": sample_text, "mock_verdict": True},
+#       timeout=60.0,
+#   )
+#   data = response.json()
+#   assert data["is_test"] is True                         # confirms test mode
+#   assert all(r["verdict"] is True for r in data["results"])
+#
+# See https://veritier.ai/docs#testing for full details.

@@ -11,6 +11,15 @@ Tools exposed:
   - verify_text       (consumes claimsPerMonth quota)
   - verify_document   (consumes claimsPerMonth quota)
 
+Zero-quota Integration Testing
+--------------------------------
+Use a test API key (vt_test_...) to test your integration without consuming quota:
+  - mock_claims (int 0-1000) on extract tools: returns deterministic mock claims
+  - mock_verdict (bool) on verify tools: returns mock verdicts, all true or all false
+
+With a test key, if you omit these params, test mode auto-activates with safe defaults.
+See https://veritier.ai/docs#testing for full details.
+
 Setup:
   1. pip install mcp httpx anyio
   2. Save this file anywhere on your machine
@@ -29,6 +38,7 @@ Setup:
      }
 
   4. Get your free API key at https://veritier.ai/register
+  5. For zero-quota testing, create a test key (vt_test_...) in your dashboard.
 
 More info: https://veritier.ai/docs#mcp
 """
@@ -87,6 +97,8 @@ def _format_results(data: dict) -> str:
         results.append(block)
     if data.get("warnings"):
         results.append("Warnings: " + "; ".join(data["warnings"]))
+    if data.get("is_test"):
+        results.append("[TEST MODE] is_test=true - mock response, no quota consumed.")
     return "\n\n".join(results) if results else "No falsifiable claims found in the text."
 
 
@@ -98,7 +110,8 @@ async def handle_list_tools() -> list[types.Tool]:
             description=(
                 "Extracts every falsifiable claim from raw text without verifying them. "
                 "Returns a list of isolated, objective statements. "
-                "Consumes extractionsPerMonth quota (cheaper than verification)."
+                "Consumes extractionsPerMonth quota (cheaper than verification). "
+                "Pass mock_claims (int 0-1000) with a test key (vt_test_...) for zero-quota testing."
             ),
             inputSchema={
                 "type": "object",
@@ -106,7 +119,18 @@ async def handle_list_tools() -> list[types.Tool]:
                     "text": {
                         "type": "string",
                         "description": "Raw text to extract claims from. Up to 32,000 characters.",
-                    }
+                    },
+                    "mock_claims": {
+                        "type": "integer",
+                        "description": (
+                            "Test mode only (requires a vt_test_... API key). "
+                            "Integer 0-1000: number of mock claims to return without calling the LLM. "
+                            "0 = empty list (tests your no-claims handling). "
+                            "Omit for normal operation or auto-activation with test key."
+                        ),
+                        "minimum": 0,
+                        "maximum": 1000,
+                    },
                 },
                 "required": ["text"],
             },
@@ -115,7 +139,8 @@ async def handle_list_tools() -> list[types.Tool]:
             name="extract_document",
             description=(
                 "Fetches a publicly accessible URL and extracts falsifiable claims from its content. "
-                "Consumes extractionsPerMonth quota."
+                "Consumes extractionsPerMonth quota. "
+                "Pass mock_claims (int 0-1000) with a test key (vt_test_...) for zero-quota testing."
             ),
             inputSchema={
                 "type": "object",
@@ -123,7 +148,16 @@ async def handle_list_tools() -> list[types.Tool]:
                     "url": {
                         "type": "string",
                         "description": "Publicly accessible URL to fetch and extract claims from.",
-                    }
+                    },
+                    "mock_claims": {
+                        "type": "integer",
+                        "description": (
+                            "Test mode only (requires a vt_test_... API key). "
+                            "Integer 0-1000: number of mock claims to return without calling the LLM."
+                        ),
+                        "minimum": 0,
+                        "maximum": 1000,
+                    },
                 },
                 "required": ["url"],
             },
@@ -134,7 +168,8 @@ async def handle_list_tools() -> list[types.Tool]:
                 "Extracts falsifiable claims from raw text and fact-checks them using "
                 "Veritier's real-time verification engine. Returns structured verdicts with "
                 "explanations and source URIs. Consumes claimsPerMonth quota. "
-                "grounding_mode='both' costs 2x quota per claim."
+                "grounding_mode='both' costs 2x quota per claim. "
+                "Pass mock_verdict (bool) with a test key (vt_test_...) for zero-quota testing."
             ),
             inputSchema={
                 "type": "object",
@@ -159,7 +194,16 @@ async def handle_list_tools() -> list[types.Tool]:
                             },
                             "required": ["type", "content"]
                         }
-                    }
+                    },
+                    "mock_verdict": {
+                        "type": "boolean",
+                        "description": (
+                            "Test mode only (requires a vt_test_... API key). "
+                            "true = all mock verdicts true (happy-path). "
+                            "false = all mock verdicts false (error-handling). "
+                            "No quota consumed. Omit for normal operation."
+                        ),
+                    },
                 },
                 "required": ["text"],
             },
@@ -168,7 +212,8 @@ async def handle_list_tools() -> list[types.Tool]:
             name="verify_document",
             description=(
                 "Fetches a publicly accessible URL document and fact-checks its claims. "
-                "Consumes claimsPerMonth quota."
+                "Consumes claimsPerMonth quota. "
+                "Pass mock_verdict (bool) with a test key (vt_test_...) for zero-quota testing."
             ),
             inputSchema={
                 "type": "object",
@@ -193,7 +238,14 @@ async def handle_list_tools() -> list[types.Tool]:
                             },
                             "required": ["type", "content"]
                         }
-                    }
+                    },
+                    "mock_verdict": {
+                        "type": "boolean",
+                        "description": (
+                            "Test mode only (requires a vt_test_... API key). "
+                            "true = all mock verdicts true. false = all false. No quota consumed."
+                        ),
+                    },
                 },
                 "required": ["url"],
             },
@@ -213,9 +265,12 @@ async def handle_call_tool(
             if name == "extract_text":
                 if "text" not in args:
                     raise ValueError("Missing 'text' argument")
+                payload: dict = {"text": args["text"]}
+                if "mock_claims" in args:
+                    payload["mock_claims"] = args["mock_claims"]
                 resp = await client.post(
                     f"{API_URL}/v1/extract",
-                    json={"text": args["text"]},
+                    json=payload,
                     headers=_auth_headers(),
                     timeout=60.0,
                 )
@@ -225,14 +280,19 @@ async def handle_call_tool(
                 text = "\n".join(f"- {c}" for c in claims) if claims else "No claims found."
                 if data.get("warnings"):
                     text += "\n\nWarnings: " + "; ".join(data["warnings"])
+                if data.get("is_test"):
+                    text += "\n\n[TEST MODE] is_test=true - mock response, no quota consumed."
                 return [types.TextContent(type="text", text=text)]
 
             elif name == "extract_document":
                 if "url" not in args:
                     raise ValueError("Missing 'url' argument")
+                payload = {"document": {"type": "url", "content": args["url"]}}
+                if "mock_claims" in args:
+                    payload["mock_claims"] = args["mock_claims"]
                 resp = await client.post(
                     f"{API_URL}/v1/extract",
-                    json={"document": {"type": "url", "content": args["url"]}},
+                    json=payload,
                     headers=_auth_headers(),
                     timeout=60.0,
                 )
@@ -242,16 +302,20 @@ async def handle_call_tool(
                 text = "\n".join(f"- {c}" for c in claims) if claims else "No claims found."
                 if data.get("warnings"):
                     text += "\n\nWarnings: " + "; ".join(data["warnings"])
+                if data.get("is_test"):
+                    text += "\n\n[TEST MODE] is_test=true - mock response, no quota consumed."
                 return [types.TextContent(type="text", text=text)]
 
             elif name == "verify_text":
                 if "text" not in args:
                     raise ValueError("Missing 'text' argument")
-                payload: dict = {"text": args["text"]}
+                payload = {"text": args["text"]}
                 if "grounding_mode" in args:
                     payload["grounding_mode"] = args["grounding_mode"]
                 if "grounding_references" in args:
                     payload["grounding_references"] = args["grounding_references"]
+                if "mock_verdict" in args:
+                    payload["mock_verdict"] = args["mock_verdict"]
                 resp = await client.post(
                     f"{API_URL}/v1/verify",
                     json=payload,
@@ -269,6 +333,8 @@ async def handle_call_tool(
                     payload["grounding_mode"] = args["grounding_mode"]
                 if "grounding_references" in args:
                     payload["grounding_references"] = args["grounding_references"]
+                if "mock_verdict" in args:
+                    payload["mock_verdict"] = args["mock_verdict"]
                 resp = await client.post(
                     f"{API_URL}/v1/verify",
                     json=payload,

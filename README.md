@@ -78,6 +78,7 @@ This repository contains ready-to-run examples in **Python** and **JavaScript**,
 |---------|-------------|
 | [extract_text.py](python/quickstart/extract_text.py) | Extract claims from text without verifying |
 | [verify_text.py](python/quickstart/verify_text.py) | Verify claims against live web evidence |
+| [test_integration.py](python/quickstart/test_integration.py) | Zero-quota integration test (no LLM, no quota consumed) |
 | [verify_article_url.py](python/use-cases/verify_article_url.py) | Fact-check all claims from a web page |
 | [hallucination_audit.py](python/use-cases/hallucination_audit.py) | 🔥 Catch LLM hallucinations before they reach users |
 | [disinformation_shield.py](python/use-cases/disinformation_shield.py) | 🛡 Screen content for false claims - truth firewall |
@@ -103,7 +104,7 @@ This repository contains ready-to-run examples in **Python** and **JavaScript**,
 | File | Description |
 |------|-------------|
 | [veritier_mcp_proxy.py](python/mcp/veritier_mcp_proxy.py) | Stdio proxy for MCP clients that need a local subprocess |
-| [veritier_mcp_test.py](python/mcp/veritier_mcp_test.py) | Integration test (stdio) |
+| [veritier_mcp_test.py](python/mcp/veritier_mcp_test.py) | Integration test - auto-detects test keys for zero-quota runs |
 
 ### MCP Integration - JavaScript → [`javascript/mcp/`](javascript/mcp/)
 
@@ -158,10 +159,8 @@ Connect any MCP-compatible AI agent to Veritier with zero local setup:
 }
 ```
 
-For clients that need a local subprocess, see the [stdio proxy](python/m-p/) in the `python/mcp/` folder.
+For clients that need a local subprocess, see the [stdio proxy](python/mcp/) in the `python/mcp/` folder.
 
----
--
 ## 🔑 Getting Started
 
 1. **Register** at [veritier.ai/register](https://veritier.ai/register) - free, no credit card
@@ -195,7 +194,49 @@ For clients that need a local subprocess, see the [stdio proxy](python/m-p/) in 
 | **Pro** | $19.99/mo | 60 | 500 | 2,000 |
 | **Business** | $249.99/mo | 300 | 10,000 | 50,000 |
 
-Upgrade anytime at [veritier.ai/dashboard](https://veriti-r.ai/dashboard) - takes effect immediately.
+Upgrade anytime at [veritier.ai/dashboard](https://veritier.ai/dashboard) - takes effect immediately.
+
+---
+
+## Integration Testing (Zero-Quota)
+
+Build and validate your integration **without consuming any quota**. Test mode returns deterministic mock data through the full auth pipeline - no LLM is ever called.
+
+### 1. Create a test key
+
+Sign in at [veritier.ai/dashboard](https://veritier.ai/dashboard) → **API Keys → Test** → **Mint New Key**.  
+Test keys are prefixed `vt_test_` and are completely isolated from your production quota.
+
+### 2. Run the zero-quota integration test
+
+```bash
+export VERITIER_TEST_KEY="vt_test_your_key_here"
+python python/quickstart/test_integration.py
+```
+
+```
+✓ [1/5] API connectivity confirmed
+✓ [2/5] Extract: 3 mock claims returned, no quota consumed
+✓ [3/5] Extract: empty-state handling (mock_claims=0) works
+✓ [4/5] Verify: happy-path (mock_verdict=True) - all verdicts True
+✓ [5/5] Verify: error-path (mock_verdict=False) - all verdicts False
+✓ All integration checks passed! Zero quota was consumed.
+```
+
+### 3. Mock parameters
+
+| Parameter | Endpoint | Description |
+|-----------|----------|-------------|
+| `mock_claims` | `POST /v1/extract` | Integer 0–1000. Returns that many mock claims. No LLM, no extraction quota. |
+| `mock_verdict` | `POST /v1/verify` | Boolean. `true` = all verdicts true, `false` = all false. No LLM, no verification quota. |
+
+**Rules:**
+- Mock fields are **only accepted with test keys** - production keys return `400 Bad Request`.
+- Test responses include `"is_test": true` in the body and `X-Veritier-Test-Mode: true` header.
+- **RPM rate limiting applies in test mode.** Monthly quota is not consumed, but requests-per-minute limits are still enforced — production rate behaviour is fully replicated.
+- With a test key, omitting mock params **auto-activates** test mode with safe defaults (1 claim / true verdict).
+- Test requests are logged and visible in the Test view in your dashboard.
+- Input validation (injection scanning, field limits) runs normally. Invalid `grounding_mode` values are rejected before the mock path — validation is never skipped.
 
 ---
 
@@ -225,7 +266,7 @@ Use `grounding_mode: "references"` to check claims against your own private data
 
 ### Content Moderation at Scale
 Process thousands of texts with automatic rate-limit handling. The [batch_verify](python/use-cases/batch_verify.py) example handles throttling and backoff for you.
--
+
 ---
 
 ## 📄 License

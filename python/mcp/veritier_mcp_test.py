@@ -5,6 +5,10 @@ Veritier MCP Integration Test (v2)
 Verifies that your Veritier MCP stdio proxy is correctly configured
 and can communicate with the Veritier API.
 
+Supports two modes:
+  - Production mode (default): uses real LLM, consumes quota
+  - Zero-quota test mode:      uses mock_claims / mock_verdict, no quota consumed
+
 Usage:
   1. Install dependencies:
      pip install mcp httpx anyio
@@ -12,25 +16,15 @@ Usage:
   2. Set your API key:
      export VERITIER_API_KEY="vt_your_api_key_here"
 
+     For zero-quota testing, use a test key:
+     export VERITIER_API_KEY="vt_test_your_test_key_here"
+
   3. Place this file in the same directory as veritier_mcp_proxy.py
 
-  4. Run the test:
+  4. Run the test (test mode auto-detected from key prefix):
      python veritier_mcp_test.py
 
-Expected output:
-  ✓ Initialize: server=veritier-proxy v2.0.0
-  ✓ Tools discovered: ['extract_text', 'extract_document', 'verify_text', 'verify_document']
-  ✓ extract_text result:
-    - The Eiffel Tower is located in Paris, France.
-    - The Eiffel Tower stands 330 metres tall.
-  ✓ verify_text result:
-    Claim: 'The Eiffel Tower is located in Berlin.'
-    Verdict: False
-    Confidence: 1.0
-    ...
-  ✓ All checks passed! Your MCP integration is working correctly.
-
-More info: https://veritier.ai/docs#mcp
+More info: https://veritier.ai/docs#testing
 """
 
 import asyncio
@@ -42,6 +36,11 @@ from pathlib import Path
 EXPECTED_TOOLS = ["extract_text", "extract_document", "verify_text", "verify_document"]
 
 
+def _is_test_key(api_key: str) -> bool:
+    """Test keys have the vt_test_... prefix."""
+    return api_key.startswith("vt_test_")
+
+
 async def test_mcp_proxy():
     api_key = os.getenv("VERITIER_API_KEY", "")
 
@@ -49,6 +48,9 @@ async def test_mcp_proxy():
         print("✗ Error: VERITIER_API_KEY environment variable is not set.")
         print("  Get your free API key at https://veritier.ai/register")
         sys.exit(1)
+
+    is_test = _is_test_key(api_key)
+    mode_label = "TEST MODE (zero-quota, mock responses)" if is_test else "🔴 PRODUCTION MODE (quota will be consumed)"
 
     # Locate the proxy script in the same directory as this test
     proxy_path = Path(__file__).parent / "veritier_mcp_proxy.py"
@@ -59,7 +61,8 @@ async def test_mcp_proxy():
         sys.exit(1)
 
     print(f"  Proxy: {proxy_path}")
-    print(f"  Key:   {'*' * 8} (length: {len(api_key)})\n")
+    print(f"  Key:   {'*' * 8} (length: {len(api_key)})")
+    print(f"  Mode:  {mode_label}\n")
 
     # Launch the standalone proxy as a subprocess
     proc = await asyncio.create_subprocess_exec(
@@ -106,13 +109,31 @@ async def test_mcp_proxy():
             print(f"✗ Error: Missing expected tools: {missing}")
             sys.exit(1)
 
+        # Verify mock_claims / mock_verdict are in tool schemas
+        tool_map = {t["name"]: t for t in tools["result"]["tools"]}
+        extract_props = tool_map["extract_text"].get("inputSchema", {}).get("properties", {})
+        verify_props = tool_map["verify_text"].get("inputSchema", {}).get("properties", {})
+        if "mock_claims" in extract_props:
+            print("✓ mock_claims parameter present in extract_text schema")
+        else:
+            print("⚠ mock_claims not found in extract_text schema (update your proxy)")
+        if "mock_verdict" in verify_props:
+            print("✓ mock_verdict parameter present in verify_text schema")
+        else:
+            print("⚠ mock_verdict not found in verify_text schema (update your proxy)")
+
         # [4] Action: Extract claims
         extract_text = "The Eiffel Tower is located in Paris, France. It stands 330 metres tall."
-        print(f"\n⏳ Extracting claims from: \"{extract_text}\"")
+        extract_args: dict = {"text": extract_text}
+        if is_test:
+            extract_args["mock_claims"] = 2
+            print(f"\n⏳ [TEST] Extracting 2 mock claims from: \"{extract_text}\"")
+        else:
+            print(f"\n⏳ Extracting claims from: \"{extract_text}\"")
 
         await send({
             "jsonrpc": "2.0", "id": 3, "method": "tools/call",
-            "params": {"name": "extract_text", "arguments": {"text": extract_text}}
+            "params": {"name": "extract_text", "arguments": extract_args}
         })
         result = await recv(timeout=60)
         content = result["result"]["content"][0]["text"]
@@ -121,13 +142,21 @@ async def test_mcp_proxy():
         for line in content.split("\n"):
             print(f"  {line}")
 
-        # [5] Action: Verify claims (with a known false statement)
+        if is_test and "[TEST MODE]" in content:
+            print("✓ is_test flag confirmed in extract response")
+
+        # [5] Action: Verify claims
         test_claim = "The Eiffel Tower is located in Berlin."
-        print(f"\n⏳ Verifying: \"{test_claim}\"")
+        verify_args: dict = {"text": test_claim}
+        if is_test:
+            verify_args["mock_verdict"] = False  # test error-handling path
+            print(f"\n⏳ [TEST] Verifying with mock_verdict=false: \"{test_claim}\"")
+        else:
+            print(f"\n⏳ Verifying: \"{test_claim}\"")
 
         await send({
             "jsonrpc": "2.0", "id": 4, "method": "tools/call",
-            "params": {"name": "verify_text", "arguments": {"text": test_claim}}
+            "params": {"name": "verify_text", "arguments": verify_args}
         })
         result = await recv(timeout=120)
         content = result["result"]["content"][0]["text"]
@@ -136,7 +165,12 @@ async def test_mcp_proxy():
         for line in content.split("\n"):
             print(f"  {line}")
 
+        if is_test and "[TEST MODE]" in content:
+            print("✓ is_test flag confirmed in verify response")
+
         print("\n✓ All checks passed! Your MCP integration is working correctly.")
+        if is_test:
+            print("  Zero quota was consumed - switch to a production key for live fact-checking.")
 
     except asyncio.TimeoutError:
         print("✗ Error: Timed out waiting for a response from the proxy.")
