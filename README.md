@@ -188,7 +188,7 @@ For clients that need a local subprocess, see the [stdio proxy](python/mcp/) in 
 
 ## 💰 Plans
 
-| Tier | Price | Req/min | Verifications/mo | Extractions/mo |-
+| Tier | Price | Req/min | Verifications/mo | Extractions/mo |
 |------|-------|:---:|:---:|:---:|
 | **Free** | $0 | 10 | 25 | 100 |
 | **Pro** | $19.99/mo | 60 | 500 | 2,000 |
