@@ -1,7 +1,7 @@
 ---
 name: veritier
-version: 3.0.0
-description: Real-time fact-checking, claim extraction, and document authenticity scanning. Extract falsifiable claims from any text or document, verify them against live web evidence, or run deep forensic scans to detect synthetic manipulation. Connects via MCP Streamable HTTP - no local setup required.
+version: 3.0.1
+description: Real-time fact-checking, claim extraction, and document authenticity scanning. Extract falsifiable claims from any text or document, verify them against live web evidence, or run deep authenticity scans to detect synthetic manipulation. Connects via MCP Streamable HTTP - no local setup required.
 homepage: https://veritier.ai
 metadata:
   openclaw:
@@ -20,7 +20,7 @@ metadata:
       network_destination_is_hardcoded: true
   veritier:
     emoji: "✅"
-    category: fact-checking
+    category: fact-checking, document-validation
     api_base: https://api.veritier.ai
     mcp_endpoint: https://api.veritier.ai/mcp/
     transport: streamable-http
@@ -29,7 +29,7 @@ metadata:
 
 # Veritier - AI Fact-Checking Skill
 
-Veritier extracts every falsifiable claim from raw text or documents, fact-checks them against live web evidence, and performs deep forensic authenticity scans to detect synthetic manipulation. Use this skill whenever accuracy matters: before publishing a response, when auditing AI-generated content for hallucinations, or when validating the integrity of user-provided documents.
+Veritier extracts every falsifiable claim from raw text or documents, fact-checks them against live web evidence, and performs deep deep authenticity scans to detect synthetic manipulation. Use this skill whenever accuracy matters: before publishing a response, when auditing AI-generated content for hallucinations, or when validating the integrity of user-provided documents.
 
 ## Skill Files
 
@@ -230,7 +230,7 @@ Fetches a URL document and fact-checks its claims.
 
 ### `validate`
 
-Runs a deep forensic authenticity scan on a document URL or base64. Detects tampering, extracts facts, and cross-references them against web evidence. Consumes `validationsPerMonth` quota only.
+Runs a deep deep authenticity scan on a document URL or base64. Detects tampering, extracts facts, and cross-references them against web evidence. Consumes `validationsPerMonth` quota only.
 
 | Parameter         | Type    | Required | Description |
 |-------------------|---------|----------|-------------|
@@ -258,7 +258,7 @@ Upgrade at: https://veritier.ai/dashboard (Stripe billing, takes effect immediat
 - **RPM limit** applies across MCP + REST API combined (shared counter per account)
 - **Verifications** (`claimsPerMonth`) counts evaluated claims - `grounding_mode=both` costs **2×** per claim
 - **Extractions** (`extractionsPerMonth`) counts extracted claims - never billed as verifications
-- **Validations** (`validationsPerMonth`) counts forensic document scans - never billed as extractions or verifications
+- **Validations** (`validationsPerMonth`) counts authenticity document scans - never billed as extractions or verifications
 - All quotas reset at the start of each calendar month (UTC)
 
 ### When you hit a limit

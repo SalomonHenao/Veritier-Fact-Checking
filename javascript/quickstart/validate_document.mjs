@@ -1,7 +1,7 @@
 /**
  * Document Authenticity Scan - Veritier Quickstart (JavaScript)
  * ==============================================================
- * Runs a deep forensic authenticity scan on a document URL or base64.
+ * Runs a deep deep authenticity scan on a document URL or base64.
  * Detects tampering, extracts facts, and cross-references them against web evidence.
  *
  * Usage:
@@ -28,7 +28,7 @@ if (!API_KEY) {
 const sampleUrl = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
 
 console.log(`📥 Input URL:\n   "${sampleUrl}"\n`);
-console.log("🔍 Running forensic authenticity scan...\n");
+console.log("🔍 Running deep authenticity scan...\n");
 
 const response = await fetch(`${API_URL}/v1/validate`, {
   method: "POST",

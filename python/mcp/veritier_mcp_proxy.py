@@ -10,6 +10,7 @@ Tools exposed:
   - extract_document  (consumes extractionsPerMonth quota)
   - verify_text       (consumes claimsPerMonth quota)
   - verify_document   (consumes claimsPerMonth quota)
+  - validate          (consumes validationsPerMonth quota)
 
 Zero-quota Integration Testing
 --------------------------------
@@ -143,7 +144,7 @@ async def handle_list_tools() -> list[types.Tool]:
             name="validate",
             description=(
                 "Validates a document (PDF/Image) for tampering, fraud, and factual consistency. "
-                "Returns a detailed forensic analysis including metadata, visual anomalies, and cross-referenced facts. "
+                "Returns a detailed authenticity analysis including metadata, visual anomalies, and cross-referenced facts. "
                 "Consumes validationsPerMonth quota."
             ),
             inputSchema={

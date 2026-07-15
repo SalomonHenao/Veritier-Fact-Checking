@@ -78,7 +78,7 @@ This repository contains ready-to-run examples in **Python** and **JavaScript**,
 |---------|-------------|
 | [extract_text.py](python/quickstart/extract_text.py) | Extract claims from text without verifying |
 | [verify_text.py](python/quickstart/verify_text.py) | Verify claims against live web evidence |
-| [validate_document.py](python/quickstart/validate_document.py) | Forensic authenticity scan for documents |
+| [validate_document.py](python/quickstart/validate_document.py) | Deep authenticity scan for documents |
 | [test_integration.py](python/quickstart/test_integration.py) | Zero-quota integration test (no LLM, no quota consumed) |
 | [verify_article_url.py](python/use-cases/verify_article_url.py) | Fact-check all claims from a web page |
 | [hallucination_audit.py](python/use-cases/hallucination_audit.py) | 🔥 Catch LLM hallucinations before they reach users |
@@ -93,7 +93,7 @@ This repository contains ready-to-run examples in **Python** and **JavaScript**,
 |---------|-------------|
 | [extract_text.mjs](javascript/quickstart/extract_text.mjs) | Extract claims from text without verifying |
 | [verify_text.mjs](javascript/quickstart/verify_text.mjs) | Verify claims against live web evidence |
-| [validate_document.mjs](javascript/quickstart/validate_document.mjs) | Forensic authenticity scan for documents |
+| [validate_document.mjs](javascript/quickstart/validate_document.mjs) | Deep authenticity scan for documents |
 | [verify_article_url.mjs](javascript/use-cases/verify_article_url.mjs) | Fact-check all claims from a web page |
 | [hallucination_audit.mjs](javascript/use-cases/hallucination_audit.mjs) | 🔥 Catch LLM hallucinations before they reach users |
 | [disinformation_shield.mjs](javascript/use-cases/disinformation_shield.mjs) | 🛡 Screen content for false claims - truth firewall |

@@ -2,7 +2,7 @@
 """
 Document Authenticity Scan - Veritier Quickstart (Python)
 ==========================================================
-Runs a deep forensic authenticity scan on a document URL or base64.
+Runs a deep deep authenticity scan on a document URL or base64.
 Detects tampering, extracts facts, and cross-references them against web evidence.
 
 Usage:
@@ -33,7 +33,7 @@ if not API_KEY:
 sample_url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
 
 print(f"📥 Input URL:\n   \"{sample_url}\"\n")
-print("🔍 Running forensic authenticity scan...\n")
+print("🔍 Running deep authenticity scan...\n")
 
 response = httpx.post(
     f"{API_URL}/v1/validate",
