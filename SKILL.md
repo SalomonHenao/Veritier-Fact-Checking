@@ -1,7 +1,7 @@
 ---
 name: veritier
-version: 2.1.2
-description: Real-time fact-checking and claim extraction. Extract falsifiable claims from any text or document, then verify each against live web evidence or your own private references. Connects via MCP Streamable HTTP - no local setup required.
+version: 3.0.0
+description: Real-time fact-checking, claim extraction, and document authenticity scanning. Extract falsifiable claims from any text or document, verify them against live web evidence, or run deep forensic scans to detect synthetic manipulation. Connects via MCP Streamable HTTP - no local setup required.
 homepage: https://veritier.ai
 metadata:
   openclaw:
@@ -29,7 +29,7 @@ metadata:
 
 # Veritier - AI Fact-Checking Skill
 
-Veritier extracts every falsifiable claim from raw text or documents and fact-checks each one in real time against live web evidence - or user-provided private references. Use this skill whenever accuracy matters: before publishing a response, when a user asks you to verify something, or when auditing AI-generated content for hallucinations.
+Veritier extracts every falsifiable claim from raw text or documents, fact-checks them against live web evidence, and performs deep forensic authenticity scans to detect synthetic manipulation. Use this skill whenever accuracy matters: before publishing a response, when auditing AI-generated content for hallucinations, or when validating the integrity of user-provided documents.
 
 ## Skill Files
 
@@ -228,15 +228,26 @@ Fetches a URL document and fact-checks its claims.
 
 ---
 
+### `validate`
+
+Runs a deep forensic authenticity scan on a document URL or base64. Detects tampering, extracts facts, and cross-references them against web evidence. Consumes `validationsPerMonth` quota only.
+
+| Parameter         | Type    | Required | Description |
+|-------------------|---------|----------|-------------|
+| `url`             | string  | ❌       | Publicly accessible URL to fetch. Required if `document_base64` is not provided. |
+| `document_base64` | string  | ❌       | Base64 string of the file. Required if `url` is not provided. |
+
+---
+
 ## Plans, Tiers & Billing
 
 ### Plans
 
-| Tier         | Price          | Req/min | Verifications/mo | Extractions/mo |
-|--------------|----------------|:-------:|:----------------:|:--------------:|
-| **Free**     | $0/month       | 10      | 25               | 100            |
-| **Pro**      | $19.99/month   | 60      | 500              | 2,000          |
-| **Business** | $249.99/month  | 300     | 10,000           | 50,000         |
+| Tier         | Price          | Req/min | Verifications/mo | Extractions/mo | Validations/mo |
+|--------------|----------------|:-------:|:----------------:|:--------------:|:--------------:|
+| **Free**     | $0/month       | 10      | 25               | 100            | 10             |
+| **Pro**      | $19.99/month   | 60      | 500              | 2,000          | 200            |
+| **Business** | $249.99/month  | 300     | 10,000           | 50,000         | 4,000          |
 
 All tiers include full MCP access, REST API access, real-time claim verification, and IETF rate limit headers.
 
@@ -247,7 +258,8 @@ Upgrade at: https://veritier.ai/dashboard (Stripe billing, takes effect immediat
 - **RPM limit** applies across MCP + REST API combined (shared counter per account)
 - **Verifications** (`claimsPerMonth`) counts evaluated claims - `grounding_mode=both` costs **2×** per claim
 - **Extractions** (`extractionsPerMonth`) counts extracted claims - never billed as verifications
-- Both quotas reset at the start of each calendar month (UTC)
+- **Validations** (`validationsPerMonth`) counts forensic document scans - never billed as extractions or verifications
+- All quotas reset at the start of each calendar month (UTC)
 
 ### When you hit a limit
 

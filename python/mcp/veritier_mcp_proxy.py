@@ -140,6 +140,35 @@ async def handle_list_tools() -> list[types.Tool]:
             },
         ),
         types.Tool(
+            name="validate",
+            description=(
+                "Validates a document (PDF/Image) for tampering, fraud, and factual consistency. "
+                "Returns a detailed forensic analysis including metadata, visual anomalies, and cross-referenced facts. "
+                "Consumes validationsPerMonth quota."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string",
+                        "description": "Publicly accessible URL to fetch and validate.",
+                    },
+                    "document_base64": {
+                        "type": "string",
+                        "description": "Base64 encoded document content.",
+                    },
+                    "mock_validation": {
+                        "type": "boolean",
+                        "description": "Test mode only.",
+                    },
+                },
+                "anyOf": [
+                    {"required": ["url"]},
+                    {"required": ["document_base64"]}
+                ],
+            },
+        ),
+        types.Tool(
             name="extract_document",
             description=(
                 "Fetches a publicly accessible URL and extracts falsifiable claims from its content. "
@@ -347,6 +376,26 @@ async def handle_call_tool(
                 )
                 resp.raise_for_status()
                 return [types.TextContent(type="text", text=_format_results(resp.json()))]
+
+            elif name == "validate":
+                if "url" not in args and "document_base64" not in args:
+                    raise ValueError("Missing 'url' or 'document_base64' argument")
+                payload = {}
+                if "url" in args:
+                    payload["document_url"] = args["url"]
+                if "document_base64" in args:
+                    payload["document_base64"] = args["document_base64"]
+                if "mock_validation" in args:
+                    payload["mock_validation"] = args["mock_validation"]
+                resp = await client.post(
+                    f"{API_URL}/v1/validate",
+                    json=payload,
+                    headers=_auth_headers(),
+                    timeout=120.0,
+                )
+                resp.raise_for_status()
+                import json
+                return [types.TextContent(type="text", text=json.dumps(resp.json(), indent=2))]
 
             else:
                 raise ValueError(f"Unknown tool: {name}")
