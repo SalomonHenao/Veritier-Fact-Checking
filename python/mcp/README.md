@@ -80,7 +80,7 @@ Expected output:
 
 ```
 ✓ Initialize: server=veritier-proxy v2.1.1
-✓ Tools discovered: ['extract_text', 'extract_document', 'verify_text', 'verify_document']
+✓ Tools discovered: ['extract_text', 'extract_document', 'verify_text', 'verify_document', 'validate']
 ✓ extract_text result:
   - The Eiffel Tower is located in Paris, France.
   - The Eiffel Tower stands 330 metres tall.
@@ -103,6 +103,7 @@ Once connected (via either method), your agent has access to:
 | `extract_document` | Extract claims from a URL document | Extractions |
 | `verify_text` | Extract + fact-check claims from raw text | Verifications |
 | `verify_document` | Extract + fact-check claims from a URL document | Verifications |
+| `validate` | Deep authenticity scan for a document | Validations |
 
 ---
 

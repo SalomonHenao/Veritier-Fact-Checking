@@ -70,6 +70,7 @@ Once connected, your agent has access to:
 | `extract_document` | Extract claims from a URL document | Extractions |
 | `verify_text` | Extract + fact-check claims from raw text | Verifications |
 | `verify_document` | Extract + fact-check claims from a URL document | Verifications |
+| `validate` | Deep authenticity scan for a document | Validations |
 
 ---
 

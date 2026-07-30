@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 Zero-Quota Integration Test - Veritier (Python)
 ================================================
@@ -17,8 +17,8 @@ Expected output:
   ✓ [1/5] API connectivity confirmed
   ✓ [2/5] Extract: 3 mock claims returned, no quota consumed
   ✓ [3/5] Extract: empty-state handling (mock_claims=0) works
-  ✓ [4/5] Verify: happy-path (mock_verdict=True) - all verdicts True
-  ✓ [5/5] Verify: error-path (mock_verdict=False) - all verdicts False
+  ✓ [4/6] Verify: happy-path (mock_verdict=True) - all verdicts True
+  ✓ [5/6] Verify: error-path (mock_verdict=False) - all verdicts False
   ✓ All integration checks passed!
 
 See https://veritier.ai/docs#testing for full documentation.
@@ -33,7 +33,7 @@ load_dotenv()
 
 # Use a dedicated test key to avoid touching production quota
 API_KEY = os.getenv("VERITIER_TEST_KEY") or os.getenv("VERITIER_API_KEY", "")
-API_URL = "https://api.veritier.ai"  # hardcoded � never sent to any other domain
+API_URL = "https://api.veritier.ai"  # hardcoded � never sent to any other domain
 
 if not API_KEY:
     print("✗ Error: VERITIER_TEST_KEY (or VERITIER_API_KEY) is not set.")
@@ -79,7 +79,7 @@ print(f"  API URL: {API_URL}")
 print(f"  Key:     {API_KEY[:12]}... (length: {len(API_KEY)})\n")
 
 # ── [1/5] API Connectivity ───────────────────────────────────────────────────
-run_test(1, 5, "API connectivity check")
+run_test(1, 6, "API connectivity check")
 try:
     resp = httpx.get(f"{API_URL}/health", timeout=10.0)
     check(resp.status_code in (200, 404), "Server reachable", f"status={resp.status_code}")
@@ -87,7 +87,7 @@ except Exception as exc:
     check(False, "Server reachable", str(exc))
 
 # ── [2/5] Extract - 3 mock claims ────────────────────────────────────────────
-run_test(2, 5, "Extract: mock_claims=3 (3 mock claims)")
+run_test(2, 6, "Extract: mock_claims=3 (3 mock claims)")
 try:
     resp = httpx.post(
         f"{API_URL}/v1/extract",
@@ -109,7 +109,7 @@ except Exception as exc:
     check(False, "Extract request succeeded", str(exc))
 
 # ── [3/5] Extract - empty state ──────────────────────────────────────────────
-run_test(3, 5, "Extract: mock_claims=0 (empty-state handling)")
+run_test(3, 6, "Extract: mock_claims=0 (empty-state handling)")
 try:
     resp = httpx.post(
         f"{API_URL}/v1/extract",
@@ -125,8 +125,8 @@ try:
 except Exception as exc:
     check(False, "Extract empty-state request succeeded", str(exc))
 
-# ── [4/5] Verify - happy path (all True) ────────────────────────────────────
-run_test(4, 5, "Verify: mock_verdict=True (all verdicts True)")
+# ── [4/6] Verify - happy path (all True) ────────────────────────────────────
+run_test(4, 6, "Verify: mock_verdict=True (all verdicts True)")
 try:
     resp = httpx.post(
         f"{API_URL}/v1/verify",
@@ -146,8 +146,8 @@ try:
 except Exception as exc:
     check(False, "Verify happy-path request succeeded", str(exc))
 
-# ── [5/5] Verify - error path (all False) ───────────────────────────────────
-run_test(5, 5, "Verify: mock_verdict=False (all verdicts False)")
+# ── [5/6] Verify - error path (all False) ───────────────────────────────────
+run_test(5, 6, "Verify: mock_verdict=False (all verdicts False)")
 try:
     resp = httpx.post(
         f"{API_URL}/v1/verify",
@@ -168,6 +168,23 @@ except Exception as exc:
 
 # ── Summary ──────────────────────────────────────────────────────────────────
 print()
+run_test(6, 6, "Validate: mock_validation=True (authentic document)")
+try:
+    resp = httpx.post(
+        f"{API_URL}/v1/validate",
+        headers=HEADERS,
+        json={"url": "https://example.com/doc.pdf", "mock_validation": True},
+        timeout=30.0,
+    )
+    check(resp.status_code == 200, "HTTP 200 OK", f"got {resp.status_code}: {resp.text[:120]}")
+    if resp.status_code == 200:
+        data = resp.json()
+        check(data.get("authenticity_score") == 100, "authenticity_score = 100")
+        check(data.get("is_authentic") is True, "is_authentic = True")
+        check(data.get("is_test") is True, "Response body contains is_test=True")
+except Exception as exc:
+    check(False, "Validate request succeeded", str(exc))
+
 if not failures:
     print("✓ All integration checks passed!")
     print("  Zero quota was consumed. Switch to a production key for live fact-checking.")
@@ -177,3 +194,6 @@ else:
     for f in failures:
         print(f"  - {f}")
     sys.exit(1)
+
+
+

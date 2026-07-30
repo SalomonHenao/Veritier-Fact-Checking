@@ -19,6 +19,8 @@ import "dotenv/config";
 
 const API_KEY = process.env.VERITIER_API_KEY || "";
 const MCP_URL = "https://api.veritier.ai/mcp/";  // hardcoded - never sent to any other domain
+const IS_TEST = API_KEY.startsWith("vt_test_");
+const modeLabel = IS_TEST ? "TEST MODE (zero-quota, mock responses)" : "🔴 PRODUCTION MODE (quota will be consumed)";
 
 if (!API_KEY) {
   console.error("✗ Error: VERITIER_API_KEY is not set.");
@@ -31,6 +33,7 @@ const EXPECTED_TOOLS = [
   "extract_document",
   "verify_text",
   "verify_document",
+  "validate",
 ];
 
 /**
@@ -58,7 +61,8 @@ console.log("━━━━━━━━━━━━━━━━━━━━━━�
 console.log("  Veritier MCP Integration Test (JS)");
 console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 console.log(`  Endpoint: ${MCP_URL}`);
-console.log(`  Key:      ${"*".repeat(8)} (length: ${API_KEY.length})\n`);
+console.log(`  Key:      ${"*".repeat(8)} (length: ${API_KEY.length})`);
+console.log(`  Mode:     ${modeLabel}\n`);
 
 try {
   // [1] Initialize MCP session
@@ -97,7 +101,13 @@ try {
   // [3] Test extract_text
   const extractText =
     "The Eiffel Tower is located in Paris, France. It stands 330 metres tall.";
-  console.log(`\n⏳ Extracting claims from: "${extractText}"`);
+  const extractArgs = { text: extractText };
+  if (IS_TEST) {
+    extractArgs.mock_claims = 2;
+    console.log(`\n⏳ [TEST] Extracting 2 mock claims from: "${extractText}"`);
+  } else {
+    console.log(`\n⏳ Extracting claims from: "${extractText}"`);
+  }
 
   const extractResult = await mcpRequest({
     jsonrpc: "2.0",
@@ -105,7 +115,7 @@ try {
     method: "tools/call",
     params: {
       name: "extract_text",
-      arguments: { text: extractText },
+      arguments: extractArgs,
     },
   });
 
@@ -114,10 +124,19 @@ try {
   for (const line of extractContent.split("\n")) {
     console.log(`  ${line}`);
   }
+  if (IS_TEST && extractContent.includes("[TEST MODE]")) {
+    console.log("✓ is_test flag confirmed in extract response");
+  }
 
   // [4] Test verify_text (with a known false claim)
   const testClaim = "The Eiffel Tower is located in Berlin.";
-  console.log(`\n⏳ Verifying: "${testClaim}"`);
+  const verifyArgs = { text: testClaim };
+  if (IS_TEST) {
+    verifyArgs.mock_verdict = false;
+    console.log(`\n⏳ [TEST] Verifying with mock_verdict=false: "${testClaim}"`);
+  } else {
+    console.log(`\n⏳ Verifying: "${testClaim}"`);
+  }
 
   const verifyResult = await mcpRequest({
     jsonrpc: "2.0",
@@ -125,7 +144,7 @@ try {
     method: "tools/call",
     params: {
       name: "verify_text",
-      arguments: { text: testClaim },
+      arguments: verifyArgs,
     },
   });
 
@@ -134,10 +153,45 @@ try {
   for (const line of verifyContent.split("\n")) {
     console.log(`  ${line}`);
   }
+  if (IS_TEST && verifyContent.includes("[TEST MODE]")) {
+    console.log("✓ is_test flag confirmed in verify response");
+  }
+
+  // [5] Test validate
+  const testUrl = "https://example.com/doc.pdf";
+  const validateArgs = { url: testUrl };
+  if (IS_TEST) {
+    validateArgs.mock_validation = true;
+    console.log(`\n⏳ [TEST] Validating with mock_validation=true: "${testUrl}"`);
+  } else {
+    console.log(`\n⏳ Validating: "${testUrl}"`);
+  }
+
+  const validateResult = await mcpRequest({
+    jsonrpc: "2.0",
+    id: 5,
+    method: "tools/call",
+    params: {
+      name: "validate",
+      arguments: validateArgs,
+    },
+  });
+
+  const validateContent = validateResult.result.content[0].text;
+  console.log("✓ validate result:\n");
+  for (const line of validateContent.split("\n")) {
+    console.log(`  ${line}`);
+  }
+  if (IS_TEST && validateContent.includes("[TEST MODE]")) {
+    console.log("✓ is_test flag confirmed in validate response");
+  }
 
   console.log(
     "\n✓ All checks passed! Your MCP integration is working correctly."
   );
+  if (IS_TEST) {
+    console.log("  Zero quota was consumed - switch to a production key for live fact-checking.");
+  }
 } catch (err) {
   console.error(`\n✗ Error: ${err.message}`);
   process.exit(1);

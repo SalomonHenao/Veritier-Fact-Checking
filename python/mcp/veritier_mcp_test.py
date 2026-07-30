@@ -33,7 +33,7 @@ import os
 import sys
 from pathlib import Path
 
-EXPECTED_TOOLS = ["extract_text", "extract_document", "verify_text", "verify_document"]
+EXPECTED_TOOLS = ["extract_text", "extract_document", "verify_text", "verify_document", "validate"]
 
 
 def _is_test_key(api_key: str) -> bool:
@@ -113,6 +113,7 @@ async def test_mcp_proxy():
         tool_map = {t["name"]: t for t in tools["result"]["tools"]}
         extract_props = tool_map["extract_text"].get("inputSchema", {}).get("properties", {})
         verify_props = tool_map["verify_text"].get("inputSchema", {}).get("properties", {})
+        validate_props = tool_map["validate"].get("inputSchema", {}).get("properties", {})
         if "mock_claims" in extract_props:
             print("✓ mock_claims parameter present in extract_text schema")
         else:
@@ -121,6 +122,10 @@ async def test_mcp_proxy():
             print("✓ mock_verdict parameter present in verify_text schema")
         else:
             print("⚠ mock_verdict not found in verify_text schema (update your proxy)")
+        if "mock_validation" in validate_props:
+            print("✓ mock_validation parameter present in validate schema")
+        else:
+            print("⚠ mock_validation not found in validate schema (update your proxy)")
 
         # [4] Action: Extract claims
         extract_text = "The Eiffel Tower is located in Paris, France. It stands 330 metres tall."
@@ -167,6 +172,29 @@ async def test_mcp_proxy():
 
         if is_test and "[TEST MODE]" in content:
             print("✓ is_test flag confirmed in verify response")
+
+        # [6] Action: Validate document
+        test_url = "https://example.com/doc.pdf"
+        validate_args: dict = {"url": test_url}
+        if is_test:
+            validate_args["mock_validation"] = True  # test authentic document
+            print(f"\n⏳ [TEST] Validating with mock_validation=true: \"{test_url}\"")
+        else:
+            print(f"\n⏳ Validating: \"{test_url}\"")
+
+        await send({
+            "jsonrpc": "2.0", "id": 5, "method": "tools/call",
+            "params": {"name": "validate", "arguments": validate_args}
+        })
+        result = await recv(timeout=120)
+        content = result["result"]["content"][0]["text"]
+
+        print(f"✓ validate result:\n")
+        for line in content.split("\n"):
+            print(f"  {line}")
+
+        if is_test and "[TEST MODE]" in content:
+            print("✓ is_test flag confirmed in validate response")
 
         print("\n✓ All checks passed! Your MCP integration is working correctly.")
         if is_test:

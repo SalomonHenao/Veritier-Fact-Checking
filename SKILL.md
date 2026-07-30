@@ -1,6 +1,6 @@
 ---
 name: veritier
-version: 3.0.1
+version: 3.1.1
 description: Real-time fact-checking, claim extraction, and document authenticity scanning. Extract falsifiable claims from any text or document, verify them against live web evidence, or run deep authenticity scans to detect synthetic manipulation. Connects via MCP Streamable HTTP - no local setup required.
 homepage: https://veritier.ai
 metadata:
@@ -327,13 +327,11 @@ curl -X POST https://api.veritier.ai/v1/verify \
   }'
 ```
 
-When `use_webhook: true` and a webhook URL is configured, the API immediately returns:
+When `use_webhook: true` and a webhook URL is configured, the API immediately returns an async accepted payload containing a unique transaction ID:
 
 ```json
 {
-  "transaction_id": "tx_a1b2c3d4e5f6g7h8",
-  "status": "processing",
-  "message": "Request accepted for background processing. Results will be sent to your configured webhook."
+  "transaction_id": "tx_a1b2c3d4e5f6g7h8"
 }
 ```
 
@@ -415,6 +413,7 @@ Test keys are prefixed `vt_test_` and are completely separate from your producti
 |-----------|----------|------|-------------|
 | `mock_claims` | `/v1/extract` | integer 0–1000 | Number of mock claims to return. Capped at your plan limit. 0 = empty list. |
 | `mock_verdict` | `/v1/verify` | boolean | `true` = all verdicts true (happy path). `false` = all verdicts false (error path). |
+| `mock_validation` | `/v1/validate` | boolean | `true` = authentic document. `false` = fraudulent document. |
 
 ```bash
 # Extract: 3 mock claims, no LLM, no quota
@@ -442,7 +441,7 @@ With a test key you can **omit** `mock_claims`/`mock_verdict` entirely. Veritier
 - Test requests **are logged** and appear in your dashboard under the Test view (useful for verifying webhook delivery end-to-end).
 - Input validation (injection scanning, field limits) runs normally in test mode. Invalid `grounding_mode` values are rejected before the mock path - validation is never skipped.
 
-**Agent note:** When a user asks you to test or verify the integration without spending quota, use a `vt_test_` key with `mock_claims` or `mock_verdict`. Do not use production keys for integration testing.
+**Agent note:** When a user asks you to test or verify the integration without spending quota, use a `vt_test_` key with `mock_claims`, `mock_verdict`, or `mock_validation`. Do not use production keys for integration testing.
 
 ### Webhook Integration Testing
 

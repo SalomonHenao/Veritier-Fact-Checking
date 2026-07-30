@@ -36,7 +36,10 @@ const response = await fetch(`${API_URL}/v1/validate`, {
     Authorization: `Bearer ${API_KEY}`,
     "Content-Type": "application/json",
   },
-  body: JSON.stringify({ document_url: sampleUrl }),
+  body: JSON.stringify({
+    url: sampleUrl,
+    // mock_validation: true, // uncomment when using a vt_test_... key to test without consuming quota
+  }),
 });
 
 if (!response.ok) {

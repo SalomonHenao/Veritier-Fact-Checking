@@ -41,7 +41,10 @@ response = httpx.post(
         "Authorization": f"Bearer {API_KEY}",
         "Content-Type": "application/json",
     },
-    json={"document_url": sample_url},
+    json={
+        "url": sample_url,
+        # "mock_validation": True,  # uncomment when using a vt_test_... key to test without consuming quota
+    },
     timeout=60.0,
 )
 

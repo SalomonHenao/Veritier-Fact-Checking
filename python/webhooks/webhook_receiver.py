@@ -76,11 +76,14 @@ def veritier_webhook():
     payload = request.get_json()
 
     transaction_id = payload.get("transaction_id", "unknown")
+    is_test = payload.get("is_test", False)
     results = payload.get("results", [])
 
     print(f"\n{'─' * 50}")
+    if is_test:
+        print("⚠️  [TEST MODE PAYLOAD] No quota was consumed.")
     print(f"✓ Webhook received - Transaction: {transaction_id}")
-    print(f"  Claims verified: {len(results)}")
+    print(f"  Claims verified/validated: {len(results)}")
 
     for res in results:
         verdict = res.get("verdict")

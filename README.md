@@ -94,6 +94,7 @@ This repository contains ready-to-run examples in **Python** and **JavaScript**,
 | [extract_text.mjs](javascript/quickstart/extract_text.mjs) | Extract claims from text without verifying |
 | [verify_text.mjs](javascript/quickstart/verify_text.mjs) | Verify claims against live web evidence |
 | [validate_document.mjs](javascript/quickstart/validate_document.mjs) | Deep authenticity scan for documents |
+| [test_integration.mjs](javascript/quickstart/test_integration.mjs) | Zero-quota integration test (no LLM, no quota consumed) |
 | [verify_article_url.mjs](javascript/use-cases/verify_article_url.mjs) | Fact-check all claims from a web page |
 | [hallucination_audit.mjs](javascript/use-cases/hallucination_audit.mjs) | 🔥 Catch LLM hallucinations before they reach users |
 | [disinformation_shield.mjs](javascript/use-cases/disinformation_shield.mjs) | 🛡 Screen content for false claims - truth firewall |
@@ -124,6 +125,7 @@ This repository contains ready-to-run examples in **Python** and **JavaScript**,
 | **extract_document** | `POST /v1/extract` | Extract claims from a URL document | Extractions |
 | **verify_text** | `POST /v1/verify` | Extract + fact-check claims from raw text | Verifications |
 | **verify_document** | `POST /v1/verify` | Extract + fact-check claims from a URL document | Verifications |
+| **validate** | `POST /v1/validate` | Deep authenticity scan for a document | Validations |
 
 ### Verification Response
 
@@ -213,15 +215,21 @@ Test keys are prefixed `vt_test_` and are completely isolated from your producti
 
 ```bash
 export VERITIER_TEST_KEY="vt_test_your_key_here"
+
+# Python
 python python/quickstart/test_integration.py
+
+# JavaScript
+node javascript/quickstart/test_integration.mjs
 ```
 
 ```
-✓ [1/5] API connectivity confirmed
-✓ [2/5] Extract: 3 mock claims returned, no quota consumed
-✓ [3/5] Extract: empty-state handling (mock_claims=0) works
-✓ [4/5] Verify: happy-path (mock_verdict=True) - all verdicts True
-✓ [5/5] Verify: error-path (mock_verdict=False) - all verdicts False
+✓ [1/6] API connectivity confirmed
+✓ [2/6] Extract: 3 mock claims returned, no quota consumed
+✓ [3/6] Extract: empty-state handling (mock_claims=0) works
+✓ [4/6] Verify: happy-path (mock_verdict=True) - all verdicts True
+✓ [5/6] Verify: error-path (mock_verdict=False) - all verdicts False
+✓ [6/6] Validate: mock_validation=True - authentic document
 ✓ All integration checks passed! Zero quota was consumed.
 ```
 
@@ -231,6 +239,7 @@ python python/quickstart/test_integration.py
 |-----------|----------|-------------|
 | `mock_claims` | `POST /v1/extract` | Integer 0–1000. Returns that many mock claims. No LLM, no extraction quota. |
 | `mock_verdict` | `POST /v1/verify` | Boolean. `true` = all verdicts true, `false` = all false. No LLM, no verification quota. |
+| `mock_validation` | `POST /v1/validate` | Boolean. `true` = authentic, `false` = fraudulent. No AI run, no validation quota. |
 
 **Rules:**
 - Mock fields are **only accepted with test keys** - production keys return `400 Bad Request`.

@@ -89,13 +89,17 @@ app.post("/webhooks/veritier", (req, res) => {
   // ── Step 2: Parse and process the payload ───────────────────────────
   const payload = JSON.parse(rawBody.toString("utf8"));
   const transactionId = payload.transaction_id || "unknown";
+  const isTest = payload.is_test || false;
   const results = payload.results || [];
 
   const icons = { true: "✅", false: "❌", null: "❓" };
 
   console.log(`\n${"─".repeat(50)}`);
+  if (isTest) {
+    console.log("⚠️  [TEST MODE PAYLOAD] No quota was consumed.");
+  }
   console.log(`✓ Webhook received - Transaction: ${transactionId}`);
-  console.log(`  Claims verified: ${results.length}`);
+  console.log(`  Claims verified/validated: ${results.length}`);
 
   for (const r of results) {
     const icon = icons[String(r.verdict)] || "❓";
