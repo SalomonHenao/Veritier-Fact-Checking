@@ -221,7 +221,7 @@ async def test_mcp_proxy():
         if is_test and "[TEST MODE]" in content:
             print("✓ is_test flag confirmed in validate response")
 
-        # [7] Action: Attest (test mode only — live attest hits npm)
+        # [7] Action: Attest (test mode only - live attest hits npm)
         if is_test:
             print('\n⏳ [TEST] Attesting with mock_decision=allow: "npm install lodash"')
             await send({

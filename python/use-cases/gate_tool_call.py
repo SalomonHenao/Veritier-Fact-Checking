@@ -65,4 +65,4 @@ if decision != "allow":
     sys.exit(2)
 
 print("Allowed. In a real agent you would now execute the command.")
-print("Informational verify credentials are not a gate — use attest_action.")
+print("Informational verify credentials are not a gate - use attest_action.")

@@ -1,8 +1,10 @@
 # ✅ Veritier - AI Fact-Checking API Examples
 
-**Stop AI Hallucinations. Verify Claims in Real Time.**
+**Stop AI Hallucinations. Verify Claims and Actions in Real Time.**
 
-Veritier is an **AI fact-checking API** that extracts falsifiable claims from any text or document and verifies each against live web evidence - or your own private references. Deterministic boolean verdicts, confidence scores, and source URLs. Built for developers, media platforms, and autonomous AI agents.
+Veritier is a **fact-checking API** for text, PDFs, and images. It extracts the claims that can actually be checked, verifies each one against live web evidence or your own private references, and returns a verdict, a confidence score, and its sources.
+
+When an agent is about to act on a claim, `attest_action` looks it up in a system of record - npm, CourtListener, EDGAR, the U.S. Code - and blocks the call if the record isn't there.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://python.org)
@@ -70,7 +72,7 @@ results.forEach((c) => console.log(`${c.verdict}: ${c.claim}`));
 
 ## 📁 What's Inside
 
-This repository contains ready-to-run examples in **Python** and **JavaScript**, plus MCP integration scripts for AI agents. Agent-oriented copy lives in [`SKILL.md`](SKILL.md) (same content as `https://veritier.ai/skill.md`).
+Every example here runs as-is in **Python** or **JavaScript**, and the MCP scripts wire the same tools into an AI agent. The agent-facing instructions live in [`SKILL.md`](SKILL.md), which is also served at `https://veritier.ai/skill.md`. This README is served at `https://veritier.ai/README.md`.
 
 ### Python Examples → [`python/`](python/)
 
@@ -133,11 +135,11 @@ This repository contains ready-to-run examples in **Python** and **JavaScript**,
 | **extract_document** | `POST /v1/extract` | Extract claims from a URL document | Extractions |
 | **verify_text** | `POST /v1/verify` | Extract + fact-check. Optional `action_id` informational credential | Verifications |
 | **verify_document** | `POST /v1/verify` | Extract + fact-check from a URL document | Verifications |
-| **validate** | `POST /v1/validate` | Authenticity scan (`document_url` / `document_base64` / `extracted_text`) | Validations |
-| **attest_action** | `POST /v1/attest_action` | Fail-closed procedure lookup + signed Claim Credential. HTTP 200 with `decision=block` is success | Verifications |
-| **reconstruct** | `GET /v1/credentials/{id}` | Public workpaper (no API key, 400-day TTL) | none |
+| **validate** | `POST /v1/validate` | Authenticity scan of `document_url`, `document_base64` with `file_name`, or `extracted_text` | Validations |
+| **attest_action** | `POST /v1/attest_action` | Looks the action up in a system of record and returns a decision plus a signed Claim Credential | Verifications |
+| **reconstruct** | `GET /v1/credentials/{id}` | Returns the public workpaper. No API key, retained 400 days | none |
 | **jwks** | `GET /v1/credentials/.well-known/jwk` | Current and previous Ed25519 public keys | none |
-| **revoke** | `POST /v1/credentials/{id}/revoke` | Issuer revoke; GET stays 200 with `revoked: true` | none |
+| **revoke** | `POST /v1/credentials/{id}/revoke` | Lets the issuer revoke a credential. The public GET still returns 200, with `revoked: true` | none |
 
 ### Verification Response
 
@@ -155,13 +157,25 @@ Claim: 'The Eiffel Tower is located in Berlin.'
 | `false` | Contradicted by evidence |
 | `null` | Insufficient evidence to determine |
 
-`attest_action` returns `decision`: `allow` | `block` | `escalate`. Treat HTTP 200 with `decision=block` as success. Optional `action_id` on `/v1/verify` is informational only — it does not fail-close.
+### Attestation Decisions
+
+`attest_action` answers with one of three decisions.
+
+| Decision | Meaning | HTTP status |
+|----------|---------|-------------|
+| `allow` | The record was found and matches the action | 200 |
+| `block` | The record is missing, or a material claim is contradicted | 200 |
+| `escalate` | A material claim could not be resolved and `on_null` is `"escalate"` | 200 |
+
+A `block` is the gate doing its job rather than a failed request, so treat it as a successful call and refuse the action.
+
+Passing `action_id` to `/v1/verify` mints a credential for the record and nothing more. Verify never fail-closes.
 
 ---
 
 ## 🤖 MCP Integration (AI Agents)
 
-Connect any MCP-compatible AI agent to Veritier with zero local setup:
+Any MCP-compatible agent can reach Veritier over HTTP with nothing installed locally:
 
 ```json
 {
@@ -177,14 +191,14 @@ Connect any MCP-compatible AI agent to Veritier with zero local setup:
 }
 ```
 
-For clients that need a local subprocess, see the [stdio proxy](python/mcp/) in the `python/mcp/` folder. MCP tools: `extract_text`, `extract_document`, `verify_text`, `verify_document`, `validate`, `attest_action`. Reconstruct, JWKS, and revoke are REST only.
+Clients that need a local subprocess can use the [stdio proxy](python/mcp/) instead. Either way the agent gets six tools: `extract_text`, `extract_document`, `verify_text`, `verify_document`, `validate`, and `attest_action`. Reconstructing a credential, fetching the JWKS, and revoking are REST-only operations.
 
 ## 🔑 Getting Started
 
 1. **Register** at [veritier.ai/register](https://veritier.ai/register) - free, no credit card
 2. **Confirm** the verification email
 3. **Go to** [veritier.ai/dashboard](https://veritier.ai/dashboard)
-4. **Click** "Mint New Key" - copy the `vt_` key immediately (shown once)
+4. **Click** "Create Key" - copy the `vt_` key immediately (shown once)
 5. **Set** `VERITIER_API_KEY` in your environment:
    ```bash
    # Copy the template
@@ -218,11 +232,11 @@ Upgrade anytime at [veritier.ai/dashboard](https://veritier.ai/dashboard) - take
 
 ## Integration Testing (Zero-Quota)
 
-Build and validate your integration **without consuming any quota**. Test mode returns deterministic mock data through the full auth pipeline - no LLM is ever called.
+You can build and check an integration without spending any quota. A test key runs the full authentication and validation path and returns fixed mock data. The model is never called.
 
 ### 1. Create a test key
 
-Sign in at [veritier.ai/dashboard](https://veritier.ai/dashboard) → **API Keys → Test** → **Mint New Key**.  
+Sign in at [veritier.ai/dashboard](https://veritier.ai/dashboard) → **API Keys → Test** → **Create Key**.  
 Test keys are prefixed `vt_test_` and are completely isolated from your production quota.
 
 ### 2. Run the zero-quota integration test
@@ -257,48 +271,48 @@ All integration checks passed. Zero quota was consumed.
 | `mock_decision` | `POST /v1/attest_action` | `allow` or `block`. Signed credential, no lookup. Test keys auto-activate allow when omitted. |
 
 **Rules:**
-- Mock fields are **only accepted with test keys** - production keys return `400 Bad Request`. The Engine playground may send `mock_decision` on a dashboard JWT; this samples repo uses API keys.
-- Test responses include `"is_test": true` in the body and `X-Veritier-Test-Mode: true` header.
-- **RPM rate limiting applies in test mode.** Monthly quota is not consumed, but requests-per-minute limits are still enforced - production rate behaviour is fully replicated.
-- With a test key, omitting mock params **auto-activates** test mode with safe defaults (1 claim / true verdict / authentic validation / allow attest).
-- Test requests are logged and visible in the Test view in your dashboard.
-- Input validation (injection scanning, field limits) runs normally. Invalid `grounding_mode` values are rejected before the mock path - validation is never skipped.
+- Mock fields are accepted only on test keys. A production key that sends one is rejected with `400 Bad Request`. The Engine playground can send `mock_decision` on a dashboard JWT, but the samples in this repo authenticate with API keys.
+- Test responses carry `"is_test": true` in the body and an `X-Veritier-Test-Mode: true` header.
+- **Requests-per-minute limits still apply in test mode.** Your monthly quota goes untouched, but the rate limiter behaves exactly as it does in production.
+- Leaving the mock parameters off a test-key request switches test mode on anyway, with defaults of one claim, a true verdict, an authentic document, and an `allow` decision.
+- Test requests are logged and appear in the Test view in your dashboard.
+- Input validation runs as normal, including injection scanning and field limits. An invalid `grounding_mode` is rejected before the mock path is reached.
 
 ---
 
 ## 🔒 Security
 
-- API keys are prefixed `vt_` and SHA-256 hashed at rest - Veritier never stores the raw value
-- Keys can be revoked at any time from the dashboard
-- Only send your key to `https://api.veritier.ai`
-- All inputs are screened by a content firewall before reaching the verification engine
-- Webhook deliveries are signed with HMAC-SHA256 (`X-Veritier-Signature` over the **raw body**). Retries reuse `Idempotency-Key` / `X-Veritier-Idempotency-Key`. HMAC does not cover extra headers.
-- Claim Credentials are public workpapers (`/c/:id`). They do not include account id or email. The issuer may revoke; GET stays 200 with `revoked: true`. They are not a judicial finding.
+- API keys are prefixed `vt_` and stored as SHA-256 hashes, so Veritier never holds the raw value.
+- You can revoke a key at any time from the dashboard.
+- Only ever send your key to `https://api.veritier.ai`.
+- Every input is screened for prompt injection before it reaches the verification engine.
+- Webhook deliveries are signed with HMAC-SHA256 in the `X-Veritier-Signature` header. The signature covers the raw body bytes and nothing else, so it does not extend to any other header. Retries reuse the same `Idempotency-Key` and `X-Veritier-Idempotency-Key`, which lets your receiver drop duplicates.
+- A Claim Credential is a public workpaper at `/c/:id`. It carries no account id and no email address. The issuer can revoke it, after which the public GET still succeeds and reports `revoked: true`. It records what was checked, and it is not a judicial finding.
 
 ---
 
 ## 🏗 Use Cases
 
 ### Catch LLM Hallucinations
-Feed AI-generated text through Veritier before publishing. The [hallucination_audit](python/use-cases/hallucination_audit.py) example shows how to flag false claims automatically.
+Run AI-generated text through Veritier before it reaches a reader. [hallucination_audit](python/use-cases/hallucination_audit.py) flags the claims that turn out to be false.
 
 ### Truth Firewall (Stop Disinformation)
-Screen user-generated content, news snippets, or social media posts for false claims. Use the [disinformation_shield](python/use-cases/disinformation_shield.py) to catch misinformation before it spreads.
+User-generated content, news snippets, and social posts can be screened the same way. [disinformation_shield](python/use-cases/disinformation_shield.py) catches false claims before they spread.
 
 ### Fact-Check Articles
-Pass any URL to the document verification endpoint. The [verify_article_url](python/use-cases/verify_article_url.py) example verifies every claim in a web page.
+Give the verification endpoint a URL and it fetches the page for you. [verify_article_url](python/use-cases/verify_article_url.py) then checks every claim it finds there.
 
 ### Verify Against Internal Documents
-Use `grounding_mode: "references"` to check claims against your own private data - no web search involved. See the [private_references](python/use-cases/private_references.py) example.
+With `grounding_mode: "references"`, claims are checked against material you supply and the web is never searched. [private_references](python/use-cases/private_references.py) shows how the request is put together.
 
 ### Gate a tool call
-Call `POST /v1/attest_action` before the agent runs a command. Only proceed on `decision=allow`. See [gate_tool_call](python/use-cases/gate_tool_call.py). HTTP 200 with `decision=block` means refuse the action.
+Call `POST /v1/attest_action` before the agent runs a command, and let it proceed only on `decision=allow`. [gate_tool_call](python/use-cases/gate_tool_call.py) wires that up end to end.
 
 ### Informational workpaper on verify
-Pass `action_id` on `POST /v1/verify` to mint a Claim Credential without fail-closing. See [informational_credential](python/use-cases/informational_credential.py).
+Pass `action_id` to `POST /v1/verify` and you get a Claim Credential for the record without gating anything. See [informational_credential](python/use-cases/informational_credential.py).
 
 ### Content Moderation at Scale
-Process thousands of texts with automatic rate-limit handling. The [batch_verify](python/use-cases/batch_verify.py) example handles throttling and backoff for you.
+Thousands of texts can go through in one pass. [batch_verify](python/use-cases/batch_verify.py) handles the throttling and backoff for you.
 
 ---
 

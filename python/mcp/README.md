@@ -1,6 +1,6 @@
 # Veritier - MCP Integration
 
-Connect any MCP-compatible AI agent to Veritier. Six tools: extract, verify, validate, and fail-closed `attest_action`.
+Connect any MCP-compatible agent to Veritier. The server exposes six tools: claim extraction and fact-checking for both raw text and URLs, an authenticity scan for documents, and `attest_action`, which can stop a tool call before it runs.
 
 📦 **API Docs:** [veritier.ai/docs](https://veritier.ai/docs#mcp) · 🔑 **Get your free key:** [veritier.ai/register](https://veritier.ai/register)
 
@@ -31,7 +31,7 @@ mcp add --transport http veritier https://api.veritier.ai/mcp/ \
 
 ## Option B: Local stdio proxy
 
-For clients that require a local subprocess.
+For clients that require a local subprocess. Install the dependencies, export your key, and run the test script to confirm the proxy talks to the API:
 
 ```bash
 pip install mcp httpx anyio
@@ -60,7 +60,7 @@ Expected (test key):
 ✓ Tools discovered: ['extract_text', 'extract_document', 'verify_text', 'verify_document', 'validate', 'attest_action']
 ```
 
-MCP is always synchronous. `use_webhook` has no effect. Reconstruct / JWKS / revoke are REST, not MCP tools.
+MCP tools always answer synchronously, so `use_webhook` has no effect here. Reconstructing a credential, fetching the JWKS, and revoking are REST operations rather than MCP tools.
 
 ---
 
@@ -70,14 +70,24 @@ MCP is always synchronous. `use_webhook` has no effect. Reconstruct / JWKS / rev
 |------|-------------|-------|
 | `extract_text` | Extract falsifiable claims from raw text | Extractions |
 | `extract_document` | Extract claims from a URL document | Extractions |
-| `verify_text` | Extract + fact-check. Optional `action_id` informational credential (not fail-closed) | Verifications |
-| `verify_document` | Same for a URL document | Verifications |
-| `validate` | Authenticity scan (`url` parameter name on MCP) | Validations |
-| `attest_action` | Fail-closed procedure lookup + signed Claim Credential | Verifications |
+| `verify_text` | Extract + fact-check. An optional `action_id` mints an informational credential, and does not fail-close | Verifications |
+| `verify_document` | Same, for a document at a URL | Verifications |
+| `validate` | Authenticity scan. The parameter is named `url` on MCP | Validations |
+| `attest_action` | Looks the action up in a system of record and returns a decision plus a signed Claim Credential | Verifications |
 
-`attest_action` procedures: `package_exists` (npm/PyPI), `citation_exists` (CourtListener existence **and quoted passages** in the opinion), `filing_exists` (SEC EDGAR), `statute_exists` (Cornell LII / IRC), `policy_ground`. HTTP 200 with `decision=block` is success.
+`attest_action` picks its system of record from the `procedure` you pass.
 
-Zero-quota on a `vt_test_` key: `mock_claims`, `mock_verdict`, `mock_validation`, `mock_decision`.
+| Procedure | Checks |
+|-----------|--------|
+| `package_exists` | The package is published on npm or PyPI |
+| `citation_exists` | The case exists in CourtListener, and any quoted passage appears in the matched opinion |
+| `filing_exists` | The filing is on SEC EDGAR |
+| `statute_exists` | The section exists in the U.S. Code or the Internal Revenue Code, via Cornell LII |
+| `policy_ground` | The action is supported by the reference text you supply |
+
+The decision comes back as `allow`, `block`, or `escalate`, and all three arrive with HTTP 200. A `block` means the gate fired and the agent must not run the call.
+
+A key prefixed `vt_test_` runs any of these tools without drawing on your quota. Pass `mock_claims`, `mock_verdict`, `mock_validation`, or `mock_decision` to choose the response you get back.
 
 ---
 
@@ -85,8 +95,8 @@ Zero-quota on a `vt_test_` key: `mock_claims`, `mock_verdict`, `mock_validation`
 
 | File | Description |
 |------|-------------|
-| [veritier_mcp_proxy.py](veritier_mcp_proxy.py) | Stdio proxy v2.2 |
-| [veritier_mcp_test.py](veritier_mcp_test.py) | Integration test v2.2 |
+| [veritier_mcp_proxy.py](veritier_mcp_proxy.py) | The stdio proxy itself, version 2.2 |
+| [veritier_mcp_test.py](veritier_mcp_test.py) | Spawns the proxy from this directory and calls every tool |
 
 ---
 

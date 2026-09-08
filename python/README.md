@@ -1,6 +1,6 @@
 # Veritier - Python Fact-Checking Examples
 
-Verify claims, scan documents, and fail-close tool calls with the **Veritier API**.
+Runnable Python examples for the **Veritier API**. They extract claims from text, fact-check them against evidence, scan documents for tampering, and gate a tool call before an agent runs it.
 
 📦 **API Docs:** [veritier.ai/docs](https://veritier.ai/docs) · 🔑 **Get your free key:** [veritier.ai/register](https://veritier.ai/register)
 
@@ -48,7 +48,16 @@ cp ../.env.example .env
 
 | Script | Description | Run |
 |--------|-------------|-----|
-| [webhook_receiver.py](webhooks/webhook_receiver.py) | HMAC-SHA256 + `Idempotency-Key` (including `type: attestation`) | `python webhooks/webhook_receiver.py` |
+| [webhook_receiver.py](webhooks/webhook_receiver.py) | Verifies HMAC-SHA256 signatures and dedupes on `Idempotency-Key`, including `type: attestation` deliveries | `python webhooks/webhook_receiver.py` |
+
+### MCP
+
+| Script | Description | Run |
+|--------|-------------|-----|
+| [mcp/veritier_mcp_proxy.py](mcp/veritier_mcp_proxy.py) | Local stdio proxy for clients that need a subprocess | started by your MCP client |
+| [mcp/veritier_mcp_test.py](mcp/veritier_mcp_test.py) | Exercises every tool through the proxy | `python mcp/veritier_mcp_test.py` |
+
+See [`mcp/README.md`](mcp/) for the client configuration.
 
 ---
 
@@ -59,10 +68,10 @@ cp ../.env.example .env
 | `/v1/extract` | POST | Extract claims without verifying |
 | `/v1/verify` | POST | Extract + verify. Optional `action_id` mints an informational credential |
 | `/v1/validate` | POST | Authenticity scan (`document_url`, `document_base64`, or `extracted_text`) |
-| `/v1/attest_action` | POST | Fail-closed procedure lookup. HTTP 200 + `decision=block` is success |
-| `/v1/credentials/{id}` | GET | Reconstruct a Claim Credential (no auth, 400-day TTL) |
-| `/v1/credentials/.well-known/jwk` | GET | Ed25519 public keys (current + previous kids) |
-| `/v1/credentials/{id}/revoke` | POST | Issuer revoke; public GET stays 200 with `revoked: true` |
+| `/v1/attest_action` | POST | Looks the action up in a system of record. Returns `allow`, `block`, or `escalate`, all with HTTP 200 |
+| `/v1/credentials/{id}` | GET | Reconstructs a Claim Credential. No API key, retained 400 days |
+| `/v1/credentials/.well-known/jwk` | GET | Ed25519 public keys, current and previous |
+| `/v1/credentials/{id}/revoke` | POST | Lets the issuer revoke a credential. The public GET still returns 200, with `revoked: true` |
 
 ---
 

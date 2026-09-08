@@ -191,7 +191,7 @@ try {
     console.log("✓ is_test flag confirmed in validate response");
   }
 
-  // [6] Test attest_action (test mode only — live attest hits npm)
+  // [6] Test attest_action (test mode only - live attest hits npm)
   if (IS_TEST) {
     console.log('\n⏳ [TEST] Attesting with mock_decision=allow: "npm install lodash"');
     const attestResult = await mcpRequest({

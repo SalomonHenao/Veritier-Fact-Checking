@@ -1,6 +1,6 @@
 # Veritier - JavaScript Fact-Checking Examples
 
-Verify claims, scan documents, and fail-close tool calls with the **Veritier API**. Node.js 18+ native `fetch`.
+Runnable JavaScript examples for the **Veritier API**. They extract claims from text, fact-check them against evidence, scan documents for tampering, and gate a tool call before an agent runs it. Every script calls the API with the native `fetch` in Node.js 18 and later. The only dependencies are `dotenv`, for reading your key out of `.env`, and `express`, which the webhook receiver uses.
 
 📦 **API Docs:** [veritier.ai/docs](https://veritier.ai/docs) · 🔑 **Get your free key:** [veritier.ai/register](https://veritier.ai/register)
 
@@ -48,7 +48,7 @@ cp ../.env.example .env
 
 | Script | Description | Run |
 |--------|-------------|-----|
-| [webhook_receiver.mjs](webhooks/webhook_receiver.mjs) | HMAC-SHA256 + `Idempotency-Key` (including `type: attestation`) | `node webhooks/webhook_receiver.mjs` |
+| [webhook_receiver.mjs](webhooks/webhook_receiver.mjs) | Verifies HMAC-SHA256 signatures and dedupes on `Idempotency-Key`, including `type: attestation` deliveries | `node webhooks/webhook_receiver.mjs` |
 
 ### MCP
 
@@ -65,10 +65,10 @@ cp ../.env.example .env
 | `/v1/extract` | POST | Extract claims without verifying |
 | `/v1/verify` | POST | Extract + verify. Optional `action_id` mints an informational credential |
 | `/v1/validate` | POST | Authenticity scan (`document_url`, `document_base64`, or `extracted_text`) |
-| `/v1/attest_action` | POST | Fail-closed procedure lookup. HTTP 200 + `decision=block` is success |
-| `/v1/credentials/{id}` | GET | Reconstruct a Claim Credential (no auth, 400-day TTL) |
-| `/v1/credentials/.well-known/jwk` | GET | Ed25519 public keys |
-| `/v1/credentials/{id}/revoke` | POST | Issuer revoke; public GET stays 200 with `revoked: true` |
+| `/v1/attest_action` | POST | Looks the action up in a system of record. Returns `allow`, `block`, or `escalate`, all with HTTP 200 |
+| `/v1/credentials/{id}` | GET | Reconstructs a Claim Credential. No API key, retained 400 days |
+| `/v1/credentials/.well-known/jwk` | GET | Ed25519 public keys, current and previous |
+| `/v1/credentials/{id}/revoke` | POST | Lets the issuer revoke a credential. The public GET still returns 200, with `revoked: true` |
 
 ---
 

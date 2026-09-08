@@ -58,4 +58,4 @@ if (data.decision !== "allow") {
 }
 
 console.log("Allowed. In a real agent you would now execute the command.");
-console.log("Informational verify credentials are not a gate — use attest_action.");
+console.log("Informational verify credentials are not a gate - use attest_action.");

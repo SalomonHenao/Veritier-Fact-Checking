@@ -27,7 +27,7 @@ Production API keys cannot send mock_*. This stdio proxy authenticates with an A
 (not a dashboard JWT). Engine mock_decision-on-JWT is REST/web only.
 See https://veritier.ai/docs#testing for full details.
 
-Claim Credentials (REST; not MCP tools — reconstruct from the id the tools return):
+Claim Credentials (REST; not MCP tools - reconstruct from the id the tools return):
   GET  https://api.veritier.ai/v1/credentials/{id}              (400-day TTL, no API key)
   GET  https://api.veritier.ai/v1/credentials/.well-known/jwk   (current + previous kids)
   POST https://api.veritier.ai/v1/credentials/{id}/revoke       (same API key; GET then revoked:true)

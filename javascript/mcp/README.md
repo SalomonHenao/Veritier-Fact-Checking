@@ -1,6 +1,6 @@
 # Veritier - MCP Integration (JavaScript)
 
-Remote Streamable HTTP — no local proxy. The stdio proxy is Python-only ([`python/mcp/`](../../python/mcp/)).
+JavaScript clients talk to Veritier over remote Streamable HTTP, with no local proxy in the way. The stdio proxy is Python-only and lives in [`python/mcp/`](../../python/mcp/).
 
 📦 **API Docs:** [veritier.ai/docs](https://veritier.ai/docs#mcp)
 
@@ -30,9 +30,9 @@ node mcp/mcp_test.mjs
 
 Expected tools: `extract_text`, `extract_document`, `verify_text`, `verify_document`, `validate`, `attest_action`.
 
-On a `vt_test_` key the script also calls `attest_action` with `mock_decision=allow` and `verify_text` with `action_id`.
+Given a `vt_test_` key, the script goes further and calls `attest_action` with `mock_decision=allow` and `verify_text` with an `action_id`.
 
-MCP is always synchronous. Reconstruct a Claim Credential with REST:
+MCP tools always answer synchronously. Reconstructing a Claim Credential is a REST call:
 
 `GET https://api.veritier.ai/v1/credentials/{id}`
 
@@ -42,10 +42,10 @@ MCP is always synchronous. Reconstruct a Claim Credential with REST:
 
 | Tool | Description |
 |------|-------------|
-| `extract_text` / `extract_document` | Claims only |
-| `verify_text` / `verify_document` | Fact-check; optional `action_id` informational credential |
-| `validate` | Authenticity scan (`url` on MCP; REST uses `document_url`) |
-| `attest_action` | Fail-closed gate. HTTP 200 + `decision=block` is success |
+| `extract_text` / `extract_document` | Pulls out the checkable claims without verifying them |
+| `verify_text` / `verify_document` | Fact-checks each claim. An optional `action_id` mints an informational credential |
+| `validate` | Authenticity scan. The parameter is `url` on MCP and `document_url` on REST |
+| `attest_action` | Returns `allow`, `block`, or `escalate`, all with HTTP 200. A `block` means the agent must not run the call |
 
 ---
 
