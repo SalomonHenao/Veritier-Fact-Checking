@@ -1,7 +1,7 @@
 ---
 name: veritier
-version: 3.1.1
-description: Real-time fact-checking, claim extraction, and document authenticity scanning. Extract falsifiable claims from any text or document, verify them against live web evidence, or run deep authenticity scans to detect synthetic manipulation. Connects via MCP Streamable HTTP - no local setup required.
+version: 3.3.1
+description: Real-time fact-checking, claim extraction, document authenticity scanning, and fail-closed action attestation. Extract falsifiable claims from any text or document, verify them against live web evidence, scan documents for synthetic manipulation, or attest a tool call against npm/PyPI, CourtListener (existence and quoted passages in the opinion), SEC EDGAR, the U.S. Code / IRC, or a policy corpus. Optional action_id on verify mints an informational credential; verify is not fail-closed. Connects via MCP Streamable HTTP - no local setup required.
 homepage: https://veritier.ai
 metadata:
   openclaw:
@@ -29,13 +29,16 @@ metadata:
 
 # Veritier - AI Fact-Checking Skill
 
-Veritier extracts every falsifiable claim from raw text or documents, fact-checks them against live web evidence, and performs deep deep authenticity scans to detect synthetic manipulation. Use this skill whenever accuracy matters: before publishing a response, when auditing AI-generated content for hallucinations, or when validating the integrity of user-provided documents.
+Veritier extracts every falsifiable claim from raw text or documents, fact-checks them against live web evidence, and performs authenticity scans to detect synthetic manipulation. Use `attest_action` to fail-close a tool call against a named record. Use this skill whenever accuracy matters: before publishing a response, when auditing AI-generated content for hallucinations, when validating the integrity of user-provided documents, or before an agent acts.
 
 ## Skill Files
 
-| File | URL |
-|------|-----|
-| **SKILL.md** (this file) | `https://veritier.ai/skill.md` |
+| File | URL / path |
+|------|------------|
+| **SKILL.md** (this file) | `https://veritier.ai/skill.md` (this repo: [`SKILL.md`](SKILL.md)) |
+| Stdio MCP proxy | `https://veritier.ai/veritier_mcp_proxy.py` (this repo: [`python/mcp/veritier_mcp_proxy.py`](python/mcp/veritier_mcp_proxy.py)) |
+| Stdio MCP test | `https://veritier.ai/veritier_mcp_test.py` (this repo: [`python/mcp/veritier_mcp_test.py`](python/mcp/veritier_mcp_test.py)) |
+| REST + webhook samples | [`python/`](python/) and [`javascript/`](javascript/) |
 
 **Install locally (Antigravity / file-based skill runners):**
 ```bash
@@ -58,12 +61,23 @@ Use **`verify_text`** when you need to:
 - Fact-check a statement, article, or paragraph a user has shared
 - Audit AI-generated content for hallucinations or inaccuracies
 - Verify against the user's own documents or URLs (use `grounding_mode: references`)
+- Optionally pass `action_id` to mint an informational Claim Credential. Verdicts stay the same; verify is not fail-closed.
 
-Use **`extract_document`** / **`verify_document`** when the source is a URL rather than raw text.
+Use **`extract_document`** / **`verify_document`** when the source is a URL rather than raw text. `verify_document` accepts the same optional `action_id`.
+
+Use **`validate`** when you need to:
+- Scan a PDF or image for authenticity before you trust extracted text
+
+Use **`attest_action`** when you need to:
+- Gate a tool call fail-closed against npm/PyPI, CourtListener (existence and quoted passages in the matched opinion, not Westlaw), SEC EDGAR, the U.S. Code / IRC, or a policy corpus
+- Get a signed Claim Credential before the agent proceeds
+- Treat HTTP 200 with `decision=block` as success (the interrupt fired)
 
 Do **not** use for:
 - Opinions, predictions, or subjective statements (Veritier only evaluates objective, falsifiable claims)
 - Real-time event data that may not yet be indexed
+- Replacing `verify_text` with a fail-closed gate — use `attest_action` for that
+- Treating a Claim Credential as a judicial finding or a discharge of duty
 
 ---
 
@@ -111,6 +125,18 @@ curl -X POST https://api.veritier.ai/v1/verify \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"text": "Your text here.", "grounding_mode": "web", "use_webhook": false}'
+
+# Optional: mint an informational credential (does not fail-close)
+curl -X POST https://api.veritier.ai/v1/verify \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Your text here.", "action_id": "tool_call_abc"}'
+
+# Fail-closed attestation (npm/PyPI)
+curl -X POST https://api.veritier.ai/v1/attest_action \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"action_id": "tool_call_abc", "text": "npm install lodash", "procedure": "package_exists"}'
 
 # Verification against private references
 curl -X POST https://api.veritier.ai/v1/verify \
@@ -185,6 +211,7 @@ Extracts and fact-checks claims from raw text using Veritier's real-time verific
 | `text`                | string | ✅       | Raw text containing claims to fact-check. Up to 32,000 characters. |
 | `grounding_mode`      | string | ❌       | `"web"` (default), `"references"`, or `"both"`. `"both"` costs 2× quota per claim. |
 | `grounding_references`| array  | ❌       | Up to 10 references. Each: `{"type": "text"/"url", "content": "..."}`. Required when `grounding_mode` is `"references"` or `"both"`. |
+| `action_id`           | string | ❌       | If set, mint an informational Claim Credential. Does not change verdicts and does not fail-close. |
 
 **Output format** (one block per claim):
 ```
@@ -225,17 +252,40 @@ Fetches a URL document and fact-checks its claims.
 |------------------|--------|----------|-------------|
 | `url`            | string | ✅       | Publicly accessible URL to fetch and verify. |
 | `grounding_mode` | string | ❌       | Same as `verify_text`. |
+| `action_id`      | string | ❌       | Same as `verify_text`. Informational credential; verify is not fail-closed. |
 
 ---
 
 ### `validate`
 
-Runs a deep deep authenticity scan on a document URL or base64. Detects tampering, extracts facts, and cross-references them against web evidence. Consumes `validationsPerMonth` quota only.
+Runs an authenticity scan on a document URL or base64. Detects tampering, extracts facts, and cross-references them against web evidence. Consumes `validationsPerMonth` quota only.
 
 | Parameter         | Type    | Required | Description |
 |-------------------|---------|----------|-------------|
 | `url`             | string  | ❌       | Publicly accessible URL to fetch. Required if `document_base64` is not provided. |
 | `document_base64` | string  | ❌       | Base64 string of the file. Required if `url` is not provided. |
+
+---
+
+### `attest_action`
+
+Fail-closed attestation of a tool call against a named procedure. Returns `decision` (`allow` | `block` | `escalate`) and a signed Claim Credential. HTTP 200 with `decision=block` is success. Consumes `claimsPerMonth` (one unit per material claim). Does **not** replace `verify_text`.
+
+| Parameter         | Type   | Required | Description |
+|-------------------|--------|----------|-------------|
+| `action_id`       | string | ✅       | Caller's identifier for the tool call. Bound into the credential. |
+| `text`            | string | ✅       | Action payload (install lines, citations, or the text the agent is about to act on). |
+| `procedure`       | string | ❌       | `"package_exists"` (npm/PyPI, default), `"citation_exists"` (CourtListener public record and quoted passages in the matched opinion, not Westlaw), `"filing_exists"` (SEC EDGAR), `"statute_exists"` (Cornell LII U.S. Code / IRC), or `"policy_ground"`. |
+| `on_null`         | string | ❌       | `"block"` (default) or `"escalate"` when a material claim is unverifiable. False always blocks. |
+| `reference_text`  | string | ❌       | Required for `policy_ground`. Policy or corpus text to ground against. |
+| `mock_decision`   | string | ❌       | `"allow"` or `"block"`. Skips lookups; no quota consumed. Test-key or Engine dashboard JWT. Production API keys still need `vt_test_`. Test keys auto-activate allow when omitted; JWT does not. |
+| `deep_audit`      | bool   | ❌       | After `block` or `escalate`, await a web verify workpaper. Does not change the decision. Extra claim units billed. Skipped on allow and in mock mode. |
+
+MCP `attest_action` is **text-only and always synchronous**. Do not pass `use_webhook` (it has no effect). `run_validate`, `document`, and `tool` are REST/Engine only. `deep_audit` is available on both REST and MCP.
+
+**Output:** `decision`, material claims, `credential.id`, `credential.verify_url` (`https://veritier.ai/c/crc_…`), and `execution` (`mode`, `input_sha256`, `kid`).
+
+Reconstruct without an API key: `GET https://api.veritier.ai/v1/credentials/{id}` (400-day TTL). JWKS (current and previous kids): `GET https://api.veritier.ai/v1/credentials/.well-known/jwk`. Issuer revoke: `POST https://api.veritier.ai/v1/credentials/{id}/revoke` (same API key). Public GET then includes `revoked: true`.
 
 ---
 
@@ -245,9 +295,9 @@ Runs a deep deep authenticity scan on a document URL or base64. Detects tamperin
 
 | Tier         | Price          | Req/min | Verifications/mo | Extractions/mo | Validations/mo |
 |--------------|----------------|:-------:|:----------------:|:--------------:|:--------------:|
-| **Free**     | $0/month       | 10      | 25               | 100            | 10             |
-| **Pro**      | $19.99/month   | 60      | 500              | 2,000          | 200            |
-| **Business** | $249.99/month  | 300     | 10,000           | 50,000         | 4,000          |
+| **Free**     | $0/month       | 10      | 25               | 100            | 5 |
+| **Pro**      | $19.99/month   | 60      | 500              | 2,000          | 100 |
+| **Business** | $249.99/month  | 300     | 10,000           | 50,000         | 2,000 |
 
 All tiers include full MCP access, REST API access, real-time claim verification, and IETF rate limit headers.
 
@@ -256,7 +306,7 @@ Upgrade at: https://veritier.ai/dashboard (Stripe billing, takes effect immediat
 ### How quotas work
 
 - **RPM limit** applies across MCP + REST API combined (shared counter per account)
-- **Verifications** (`claimsPerMonth`) counts evaluated claims - `grounding_mode=both` costs **2×** per claim
+- **Verifications** (`claimsPerMonth`) counts evaluated claims - `grounding_mode=both` costs **2×** per claim. Fail-closed `attest_action` also consumes this quota (one unit per material claim).
 - **Extractions** (`extractionsPerMonth`) counts extracted claims - never billed as verifications
 - **Validations** (`validationsPerMonth`) counts authenticity document scans - never billed as extractions or verifications
 - All quotas reset at the start of each calendar month (UTC)
@@ -327,11 +377,23 @@ curl -X POST https://api.veritier.ai/v1/verify \
   }'
 ```
 
-When `use_webhook: true` and a webhook URL is configured, the API immediately returns an async accepted payload containing a unique transaction ID:
+When `use_webhook: true` and a webhook URL is configured, extract/verify/validate immediately return an async accepted payload containing a unique transaction ID:
 
 ```json
 {
   "transaction_id": "tx_a1b2c3d4e5f6g7h8"
+}
+```
+
+`POST /v1/attest_action` also returns `202` when a webhook is configured. The named procedure is awaited first (so Azure Functions can finish the work), and the 202 body includes `decision` and `credential_id`. The HMAC POST uses `"type": "attestation"` and includes the full workpaper under `results`.
+
+```json
+{
+  "transaction_id": "tx_a1b2c3d4e5f6g7h8",
+  "decision": "block",
+  "credential_id": "crc_…",
+  "verify_url": "https://veritier.ai/c/crc_…",
+  "action_id": "tool_call_abc"
 }
 ```
 
@@ -352,14 +414,15 @@ If `use_webhook` is `false` or omitted, the request always executes synchronousl
 
 ### Verifying the webhook signature (HMAC-SHA256)
 
-Every delivery includes an `X-Veritier-Signature` header. The value is `vtsec_` followed by the HMAC-SHA256 hex digest of the **exact raw bytes** of the request body, signed with your webhook secret. Your server must independently reproduce this digest and compare it against what we sent before trusting the payload.
+Every delivery includes an `X-Veritier-Signature` header. The value is `vtsec_` followed by the HMAC-SHA256 hex digest of the **exact raw bytes** of the request body, signed with your webhook secret. Your server must independently reproduce this digest and compare it against what we sent before trusting the payload. Retries send the same `Idempotency-Key` / `X-Veritier-Idempotency-Key` (attest: `attestation:{action_id}:{transaction_id}`) and `X-Veritier-Transaction-Id`. When the payload has an `action_id`, deliveries also include `X-Veritier-Action-Id`. The HMAC is over the body only.
 
 **What your server needs to do on each incoming webhook:**
 1. **Read the raw request body** - capture the bytes _before_ any JSON parsing
-2. **Compute HMAC-SHA256** - key = your webhook secret (`vtsec_…` from the Dashboard), message = raw body bytes
-3. **Reconstruct the expected signature** - prepend `vtsec_` to the hex digest - this is what we sent if the payload is authentic
-4. **Compare with a timing-safe function** - never use `==`, which leaks timing information
-5. **Only then parse and process** - deserialize the JSON and handle the results
+2. **Check Idempotency-Key** - retries send the same key (`attestation:{action_id}:{transaction_id}` for attest) so your receiver can ignore duplicates
+3. **Compute HMAC-SHA256** - key = your webhook secret (`vtsec_…` from the Dashboard), message = raw body bytes
+4. **Reconstruct the expected signature** - prepend `vtsec_` to the hex digest - this is what we sent if the payload is authentic
+5. **Compare with a timing-safe function** - never use `==`, which leaks timing information
+6. **Only then parse and process** - deserialize the JSON and handle the results
 
 > ⚠️ **Important:** Do NOT deserialize the JSON first then re-serialize it to compute the HMAC. Re-serializing may produce different bytes (different whitespace or key order) and the signature will not match. Always verify against the original raw bytes.
 
@@ -386,6 +449,9 @@ def veritier_webhook():
     # hmac.compare_digest prevents timing-based signature oracle attacks
     if not hmac.compare_digest(signature, expected):
         abort(401)
+
+    # Retries send the same Idempotency-Key / X-Veritier-Idempotency-Key
+    # (attest: attestation:{action_id}:{transaction_id}). HMAC is over the body only.
 
     # Safe to parse only after verification passes
     payload = request.get_json()
@@ -414,6 +480,7 @@ Test keys are prefixed `vt_test_` and are completely separate from your producti
 | `mock_claims` | `/v1/extract` | integer 0–1000 | Number of mock claims to return. Capped at your plan limit. 0 = empty list. |
 | `mock_verdict` | `/v1/verify` | boolean | `true` = all verdicts true (happy path). `false` = all verdicts false (error path). |
 | `mock_validation` | `/v1/validate` | boolean | `true` = authentic document. `false` = fraudulent document. |
+| `mock_decision` | `/v1/attest_action` | string | `allow` or `block`. Signed credential. No registry lookup or LLM. Test keys auto-activate allow when omitted. The Engine playground may send this on a dashboard JWT without auto-activating. Production API keys still need `vt_test_`. |
 
 ```bash
 # Extract: 3 mock claims, no LLM, no quota
@@ -431,17 +498,17 @@ curl -X POST https://api.veritier.ai/v1/verify \
 
 ### Auto-activation
 
-With a test key you can **omit** `mock_claims`/`mock_verdict` entirely. Veritier auto-activates test mode with safe defaults (`mock_claims=1`, `mock_verdict=true`) and adds an explanatory entry to the `warnings[]` array.
+With a test key you can **omit** `mock_claims`/`mock_verdict`/`mock_validation`/`mock_decision` entirely. Veritier auto-activates test mode with safe defaults (`mock_claims=1`, `mock_verdict=true`, `mock_validation=true`, `mock_decision=allow`) and adds an explanatory entry to the `warnings[]` array. A dashboard JWT (Engine) does **not** auto-activate; omit `mock_decision` to run the live procedure.
 
 ### Rules
 
-- Mock parameters are **only accepted with test keys** (`vt_test_...`). Sending them with a production key returns `400 Bad Request`.
+- Mock parameters on production API keys return `400 Bad Request`. Test keys (`vt_test_...`) accept all `mock_*` fields and auto-activate when omitted. The Engine playground may send `mock_decision` on a dashboard JWT without auto-activating; Off omits the field. `mock_claims` / `mock_verdict` / `mock_validation` remain test-key only.
 - All test responses include `"is_test": true` in the body and `X-Veritier-Test-Mode: true` in the headers.
 - **Rate limiting (RPM) applies in test mode.** Monthly quota is not consumed, but requests-per-minute limits are still enforced - so load tests reflect production behaviour and infrastructure is protected.
 - Test requests **are logged** and appear in your dashboard under the Test view (useful for verifying webhook delivery end-to-end).
 - Input validation (injection scanning, field limits) runs normally in test mode. Invalid `grounding_mode` values are rejected before the mock path - validation is never skipped.
 
-**Agent note:** When a user asks you to test or verify the integration without spending quota, use a `vt_test_` key with `mock_claims`, `mock_verdict`, or `mock_validation`. Do not use production keys for integration testing.
+**Agent note:** When a user asks you to test or verify the integration without spending quota, use a `vt_test_` key with `mock_claims`, `mock_verdict`, `mock_validation`, or `mock_decision`. Do not use production API keys for integration testing. The Engine playground may send `mock_decision` on a dashboard session; Off omits the field and runs the named procedure.
 
 ### Webhook Integration Testing
 
@@ -450,7 +517,7 @@ Test mode is fully webhook-aware, enabling end-to-end testing of your async deli
 1. **Configure a test webhook** in the Dashboard: `Settings → Webhooks → Test`.  
    Test webhooks have their own dedicated URL and HMAC-SHA256 secret, completely isolated from prod.
 
-2. **Call with `use_webhook: true`** using your `vt_test_...` key. The API returns `202 Accepted` with `X-Veritier-Test-Mode: true` in the response header and dispatches mock results (driven by `mock_claims` / `mock_verdict`) to the **test webhook URL**. No LLM is called. No quota is consumed.
+2. **Call with `use_webhook: true`** using your `vt_test_...` key. The API returns `202 Accepted` with `X-Veritier-Test-Mode: true` in the response header and dispatches mock results (driven by `mock_claims` / `mock_verdict` / `mock_validation` / `mock_decision`) to the **test webhook URL**. No LLM is called. No quota is consumed. Attest 202 bodies include `decision` and `credential_id`.
 
 3. Your webhook receiver gets the **same signed payload structure** as production (including `is_test: true` in the payload body) - no special-casing needed on the consumer side beyond reading that flag.
 

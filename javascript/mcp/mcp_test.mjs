@@ -34,6 +34,7 @@ const EXPECTED_TOOLS = [
   "verify_text",
   "verify_document",
   "validate",
+  "attest_action",
 ];
 
 /**
@@ -73,7 +74,7 @@ try {
     params: {
       protocolVersion: "2024-11-05",
       capabilities: {},
-      clientInfo: { name: "veritier-mcp-test-js", version: "2.0" },
+      clientInfo: { name: "veritier-mcp-test-js", version: "2.2" },
     },
   });
 
@@ -133,7 +134,8 @@ try {
   const verifyArgs = { text: testClaim };
   if (IS_TEST) {
     verifyArgs.mock_verdict = false;
-    console.log(`\n⏳ [TEST] Verifying with mock_verdict=false: "${testClaim}"`);
+    verifyArgs.action_id = "mcp_test_verify";
+    console.log(`\n⏳ [TEST] Verifying with mock_verdict=false and action_id: "${testClaim}"`);
   } else {
     console.log(`\n⏳ Verifying: "${testClaim}"`);
   }
@@ -155,6 +157,9 @@ try {
   }
   if (IS_TEST && verifyContent.includes("[TEST MODE]")) {
     console.log("✓ is_test flag confirmed in verify response");
+  }
+  if (IS_TEST && verifyContent.includes("Informational credential")) {
+    console.log("✓ verify_text action_id minted an informational credential");
   }
 
   // [5] Test validate
@@ -184,6 +189,33 @@ try {
   }
   if (IS_TEST && validateContent.includes("[TEST MODE]")) {
     console.log("✓ is_test flag confirmed in validate response");
+  }
+
+  // [6] Test attest_action (test mode only — live attest hits npm)
+  if (IS_TEST) {
+    console.log('\n⏳ [TEST] Attesting with mock_decision=allow: "npm install lodash"');
+    const attestResult = await mcpRequest({
+      jsonrpc: "2.0",
+      id: 6,
+      method: "tools/call",
+      params: {
+        name: "attest_action",
+        arguments: {
+          action_id: "mcp_test_attest",
+          text: "npm install lodash",
+          procedure: "package_exists",
+          mock_decision: "allow",
+        },
+      },
+    });
+    const attestContent = attestResult.result.content[0].text;
+    console.log("✓ attest_action result:\n");
+    for (const line of attestContent.split("\n").slice(0, 20)) {
+      console.log(`  ${line}`);
+    }
+    if (attestContent.includes("crc_")) {
+      console.log("✓ attest_action returned a credential id");
+    }
   }
 
   console.log(

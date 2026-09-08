@@ -99,3 +99,7 @@ console.log(
 //   console.log(data.is_test === true);     // confirms test mode
 //
 // See https://veritier.ai/docs#testing for full details.
+//
+// Optional action_id mints an informational Claim Credential. Verdicts stay
+// the same; verify is not fail-closed. Use attest_action to gate a tool call.
+// See use-cases/informational_credential.mjs and quickstart/attest_action.mjs.

@@ -1,14 +1,12 @@
 # Veritier - MCP Integration
 
-Connect any MCP-compatible AI agent to Veritier's real-time fact-checking engine. The **Model Context Protocol (MCP)** is an open standard that lets AI agents discover and use external tools - Veritier exposes four tools for claim extraction and verification.
+Connect any MCP-compatible AI agent to Veritier. Six tools: extract, verify, validate, and fail-closed `attest_action`.
 
-📦 **API Docs:** [veritier.ai/docs](https://veritier.ai/docs) · 🔑 **Get your free key:** [veritier.ai/register](https://veritier.ai/register)
+📦 **API Docs:** [veritier.ai/docs](https://veritier.ai/docs#mcp) · 🔑 **Get your free key:** [veritier.ai/register](https://veritier.ai/register)
 
 ---
 
-## Option A: Remote HTTP (recommended - zero install)
-
-Point your MCP client directly at the Veritier cloud endpoint. No Python, no proxy, no local setup.
+## Option A: Remote HTTP (recommended)
 
 ```json
 {
@@ -24,8 +22,6 @@ Point your MCP client directly at the Veritier cloud endpoint. No Python, no pro
 }
 ```
 
-Or via MCP CLI:
-
 ```bash
 mcp add --transport http veritier https://api.veritier.ai/mcp/ \
   --header "Authorization: Bearer YOUR_API_KEY"
@@ -33,28 +29,15 @@ mcp add --transport http veritier https://api.veritier.ai/mcp/ \
 
 ---
 
-## Option B: Local stdio Proxy
+## Option B: Local stdio proxy
 
-For MCP clients that require a local subprocess (stdio transport) instead of a remote HTTP connection.
-
-### Prerequisites
-
-- Python 3.10+
-- `pip install mcp httpx anyio`
-
-### Setup
-
-**1. Set your API key:**
+For clients that require a local subprocess.
 
 ```bash
-# macOS / Linux
-export VERITIER_API_KEY="vt_your_key_here"
-
-# Windows (PowerShell)
-$env:VERITIER_API_KEY = "vt_your_key_here"
+pip install mcp httpx anyio
+export VERITIER_API_KEY="vt_your_key_here"   # or vt_test_... for zero-quota
+python veritier_mcp_test.py
 ```
-
-**2. Configure your MCP client:**
 
 ```json
 {
@@ -70,67 +53,45 @@ $env:VERITIER_API_KEY = "vt_your_key_here"
 }
 ```
 
-**3. Verify it works:**
-
-```bash
-python veritier_mcp_test.py
-```
-
-Expected output:
+Expected (test key):
 
 ```
-✓ Initialize: server=veritier-proxy v2.1.1
-✓ Tools discovered: ['extract_text', 'extract_document', 'verify_text', 'verify_document', 'validate']
-✓ extract_text result:
-  - The Eiffel Tower is located in Paris, France.
-  - The Eiffel Tower stands 330 metres tall.
-✓ verify_text result:
-  Claim: 'The Eiffel Tower is located in Berlin.'
-    Verdict: False
-    ...
-✓ All checks passed! Your MCP integration is working correctly.
+✓ Initialize: server=veritier-proxy v2.2.0
+✓ Tools discovered: ['extract_text', 'extract_document', 'verify_text', 'verify_document', 'validate', 'attest_action']
 ```
+
+MCP is always synchronous. `use_webhook` has no effect. Reconstruct / JWKS / revoke are REST, not MCP tools.
 
 ---
 
-## Available Tools
-
-Once connected (via either method), your agent has access to:
+## Tools
 
 | Tool | Description | Quota |
 |------|-------------|-------|
 | `extract_text` | Extract falsifiable claims from raw text | Extractions |
 | `extract_document` | Extract claims from a URL document | Extractions |
-| `verify_text` | Extract + fact-check claims from raw text | Verifications |
-| `verify_document` | Extract + fact-check claims from a URL document | Verifications |
-| `validate` | Deep authenticity scan for a document | Validations |
+| `verify_text` | Extract + fact-check. Optional `action_id` informational credential (not fail-closed) | Verifications |
+| `verify_document` | Same for a URL document | Verifications |
+| `validate` | Authenticity scan (`url` parameter name on MCP) | Validations |
+| `attest_action` | Fail-closed procedure lookup + signed Claim Credential | Verifications |
+
+`attest_action` procedures: `package_exists` (npm/PyPI), `citation_exists` (CourtListener existence **and quoted passages** in the opinion), `filing_exists` (SEC EDGAR), `statute_exists` (Cornell LII / IRC), `policy_ground`. HTTP 200 with `decision=block` is success.
+
+Zero-quota on a `vt_test_` key: `mock_claims`, `mock_verdict`, `mock_validation`, `mock_decision`.
 
 ---
 
-## Files in This Folder
+## Files
 
 | File | Description |
 |------|-------------|
-| [veritier_mcp_proxy.py](veritier_mcp_proxy.py) | Lightweight stdio proxy - bridges local MCP clients to the Veritier API |
-| [veritier_mcp_test.py](veritier_mcp_test.py) | Integration test - verifies your proxy setup is working correctly |
+| [veritier_mcp_proxy.py](veritier_mcp_proxy.py) | Stdio proxy v2.2 |
+| [veritier_mcp_test.py](veritier_mcp_test.py) | Integration test v2.2 |
 
 ---
 
-## Troubleshooting
+## Need help?
 
-| Problem | Solution |
-|---------|----------|
-| `Error: mcp is required` | Run `pip install mcp` |
-| `Error: httpx is required` | Run `pip install httpx` |
-| `VERITIER_API_KEY not set` | Set the env var or add it to your MCP client's `env` config |
-| Timeout errors | Check your internet connection; the API may need up to 120s for large documents |
-| `402` response | Monthly quota exhausted - upgrade at [veritier.ai/dashboard](https://veritier.ai/dashboard) |
-
----
-
-## Need Help?
-
-- **Full docs:** [veritier.ai/docs](https://veritier.ai/docs)
-- **Python examples:** See the parent [`python/`](../) folder
-- **JavaScript examples:** See the [`javascript/`](../../javascript/) folder
-- **Agent skill file:** See [SKILL.md](../../SKILL.md) at the repository root
+- **Skill file:** [SKILL.md](../../SKILL.md)
+- **REST samples:** [python/](../)
+- **JavaScript MCP HTTP test:** [javascript/mcp/](../../javascript/mcp/)

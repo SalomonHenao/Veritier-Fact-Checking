@@ -1,34 +1,34 @@
 /**
  * Document Authenticity Scan - Veritier Quickstart (JavaScript)
  * ==============================================================
- * Runs a deep deep authenticity scan on a document URL or base64.
- * Detects tampering, extracts facts, and cross-references them against web evidence.
+ * REST fields: document_url, document_base64, or extracted_text (not "url").
+ * MCP validate still uses the parameter name "url".
  *
  * Usage:
- *   1. npm install dotenv
- *   2. cp .env.example .env  (then add your API key)
- *   3. node validate_document.mjs
+ *   node validate_document.mjs
  *
- * Get your free API key: https://veritier.ai/register
- * Full docs: https://veritier.ai/docs
+ * Docs: https://veritier.ai/docs
  */
 
 import "dotenv/config";
 
 const API_KEY = process.env.VERITIER_API_KEY || "";
-const API_URL = "https://api.veritier.ai";  // hardcoded - never sent to any other domain
+const API_URL = "https://api.veritier.ai";
 
 if (!API_KEY) {
-  console.error("❌ Error: VERITIER_API_KEY is not set.");
-  console.error("  Get your free key at https://veritier.ai/register");
+  console.error("Error: VERITIER_API_KEY is not set.");
   process.exit(1);
 }
 
-// 📄 Sample document URL to validate 📄📄📄📄📄📄📄📄📄📄📄📄📄📄📄📄
-const sampleUrl = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
+const body = {
+  extracted_text: "Certificate of completion issued to Jane Doe on 12 January 2024.",
+};
+if (API_KEY.startsWith("vt_test_")) {
+  body.mock_validation = true;
+  console.log("TEST MODE: mock_validation=true (no pipeline, no quota)\n");
+}
 
-console.log(`📥 Input URL:\n   "${sampleUrl}"\n`);
-console.log("🔍 Running deep authenticity scan...\n");
+console.log("Running authenticity scan...\n");
 
 const response = await fetch(`${API_URL}/v1/validate`, {
   method: "POST",
@@ -36,31 +36,25 @@ const response = await fetch(`${API_URL}/v1/validate`, {
     Authorization: `Bearer ${API_KEY}`,
     "Content-Type": "application/json",
   },
-  body: JSON.stringify({
-    url: sampleUrl,
-    // mock_validation: true, // uncomment when using a vt_test_... key to test without consuming quota
-  }),
+  body: JSON.stringify(body),
 });
 
 if (!response.ok) {
-  console.error(`❌ API error (${response.status}): ${await response.text()}`);
+  console.error(`API error (${response.status}): ${await response.text()}`);
   process.exit(1);
 }
 
 const data = await response.json();
-const riskScore = data.authenticity_risk_score ?? 0;
-console.log(`🛡️ Authenticity Risk Score: ${riskScore}/100`);
-
-const findings = data.findings || [];
-console.log(`\n📋 Extracted ${findings.length} findings:`);
-findings.forEach((finding, i) => {
-  console.log(`  ${i + 1}. ${finding}`);
-});
+const result = data.result || data;
+console.log(`verdict:          ${result.verdict}`);
+console.log(`fraud_risk_score: ${result.fraud_risk_score}`);
+console.log(`document_type:    ${result.document_type}`);
+if (data.is_test) console.log("is_test: true");
 
 if (data.warnings?.length) {
-  console.log(`\n⚠️ Warnings: ${data.warnings.join("; ")}`);
+  console.log(`\nWarnings: ${data.warnings.join("; ")}`);
 }
 
 console.log(
-  `\n⏱️ Rate limit: ${response.headers.get("RateLimit-Remaining") ?? "?"} requests remaining this minute`
+  `\nRate limit: ${response.headers.get("RateLimit-Remaining") ?? "?"} requests remaining this minute`
 );

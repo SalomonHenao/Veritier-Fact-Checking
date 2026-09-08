@@ -1,14 +1,12 @@
 # Veritier - MCP Integration (JavaScript)
 
-Connect any MCP-compatible AI agent to Veritier's real-time fact-checking engine from JavaScript. The **Model Context Protocol (MCP)** is an open standard that lets AI agents discover and use external tools - Veritier exposes four tools for claim extraction and verification.
+Remote Streamable HTTP — no local proxy. The stdio proxy is Python-only ([`python/mcp/`](../../python/mcp/)).
 
-📦 **API Docs:** [veritier.ai/docs](https://veritier.ai/docs) · 🔑 **Get your free key:** [veritier.ai/register](https://veritier.ai/register)
+📦 **API Docs:** [veritier.ai/docs](https://veritier.ai/docs#mcp)
 
 ---
 
-## Remote HTTP (recommended - zero install)
-
-Point your MCP client directly at the Veritier cloud endpoint. No local proxy, no setup.
+## Remote HTTP
 
 ```json
 {
@@ -24,69 +22,34 @@ Point your MCP client directly at the Veritier cloud endpoint. No local proxy, n
 }
 ```
 
-Or via MCP CLI:
-
-```bash
-mcp add --transport http veritier https://api.veritier.ai/mcp/ \
-  --header "Authorization: Bearer YOUR_API_KEY"
-```
-
----
-
-## Verify Your Integration
-
-Run the included test script to confirm everything works:
-
 ```bash
 cd javascript
 npm install
 node mcp/mcp_test.mjs
 ```
 
-Expected output:
+Expected tools: `extract_text`, `extract_document`, `verify_text`, `verify_document`, `validate`, `attest_action`.
 
-```
-✓ Initialize: server=veritier v2.1.1
-✓ Tools discovered: [extract_text, extract_document, verify_text, verify_document]
-✓ extract_text result:
-  - The Eiffel Tower is located in Paris, France.
-  - The Eiffel Tower stands 330 metres tall.
-✓ verify_text result:
-  Claim: 'The Eiffel Tower is located in Berlin.'
-    Verdict: False
-    ...
-✓ All checks passed! Your MCP integration is working correctly.
-```
+On a `vt_test_` key the script also calls `attest_action` with `mock_decision=allow` and `verify_text` with `action_id`.
+
+MCP is always synchronous. Reconstruct a Claim Credential with REST:
+
+`GET https://api.veritier.ai/v1/credentials/{id}`
 
 ---
 
-## Available Tools
+## Tools
 
-Once connected, your agent has access to:
-
-| Tool | Description | Quota |
-|------|-------------|-------|
-| `extract_text` | Extract falsifiable claims from raw text | Extractions |
-| `extract_document` | Extract claims from a URL document | Extractions |
-| `verify_text` | Extract + fact-check claims from raw text | Verifications |
-| `verify_document` | Extract + fact-check claims from a URL document | Verifications |
-| `validate` | Deep authenticity scan for a document | Validations |
-
----
-
-## Files in This Folder
-
-| File | Description |
+| Tool | Description |
 |------|-------------|
-| [mcp_test.mjs](mcp_test.mjs) | Integration test - verifies MCP connectivity using native `fetch` |
-
-> **Note:** For a local stdio proxy (required by some MCP clients), see the [Python MCP folder](../../python/mcp/). The stdio proxy is Python-only because the `mcp` SDK used for stdio transport is a Python package.
+| `extract_text` / `extract_document` | Claims only |
+| `verify_text` / `verify_document` | Fact-check; optional `action_id` informational credential |
+| `validate` | Authenticity scan (`url` on MCP; REST uses `document_url`) |
+| `attest_action` | Fail-closed gate. HTTP 200 + `decision=block` is success |
 
 ---
 
-## Need Help?
+## Need help?
 
-- **Full docs:** [veritier.ai/docs](https://veritier.ai/docs)
-- **Python MCP proxy:** See [`python/mcp/`](../../python/mcp/) for the local stdio proxy
-- **JavaScript examples:** See the parent [`javascript/`](../) folder
-- **Agent skill file:** See [SKILL.md](../../SKILL.md) at the repository root
+- **Skill file:** [SKILL.md](../../SKILL.md)
+- **Python stdio proxy:** [`python/mcp/`](../../python/mcp/)
