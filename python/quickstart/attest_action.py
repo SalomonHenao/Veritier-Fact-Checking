@@ -18,8 +18,12 @@ Usage:
 With a vt_test_ key this script sends mock_decision=allow (no live lookup,
 no quota). With a production key it runs package_exists against npm.
 
+REST: procedure is required; provide text XOR document; policy_ground uses
+grounding_references (not reference_text). MCP is a separate schema.
+
 Get your free API key: https://veritier.ai/register
 Full docs: https://veritier.ai/docs#attestation
+OpenAPI: https://api.veritier.ai/openapi.json
 """
 
 import os

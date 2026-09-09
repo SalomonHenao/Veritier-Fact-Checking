@@ -331,7 +331,8 @@ async def handle_list_tools() -> list[types.Tool]:
                 "package_exists looks up npm/PyPI; citation_exists looks up CourtListener "
                 "existence and quoted passages in the matched opinion; "
                 "filing_exists looks up SEC EDGAR; statute_exists looks up Cornell LII "
-                "U.S. Code / IRC; policy_ground requires reference_text. "
+                "U.S. Code / IRC; policy_ground requires reference_text "
+                "(MCP-only alias; wrapped into a single text GroundingReference). "
                 "Pass mock_decision (allow|block) with a test key (vt_test_...) for zero-quota testing. "
                 "deep_audit runs a web verify after block/escalate without changing the decision. "
                 "Always synchronous: use_webhook is REST-only and is never forwarded."
@@ -363,7 +364,11 @@ async def handle_list_tools() -> list[types.Tool]:
                     },
                     "reference_text": {
                         "type": "string",
-                        "description": "Required when procedure is policy_ground.",
+                        "description": (
+                            "MCP-only alias. Required when procedure is policy_ground. "
+                            "Wrapped into a single text GroundingReference. "
+                            "REST POST /v1/attest_action uses grounding_references instead."
+                        ),
                     },
                     "mock_decision": {
                         "type": "string",
