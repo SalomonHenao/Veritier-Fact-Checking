@@ -1,7 +1,7 @@
 ---
 name: veritier
-version: 3.4.0
-description: Fact-check text and documents against live web evidence or your own private references, pull the checkable claims out of a draft, and scan files for signs of manipulation. Before an agent acts on a claim, attest_action looks it up in a system of record - npm, PyPI, CourtListener, SEC EDGAR, the U.S. Code, or a policy corpus you supply - and blocks the call if the record isn't there. Connects over MCP Streamable HTTP, so there is nothing to install.
+version: 3.4.1
+description: Agent Trust Gate for tool calls. Agents should not act without a gate and evidence. attest_action looks the action up in a system of record - npm, PyPI, CourtListener, SEC EDGAR, the U.S. Code, or a policy corpus you supply - and blocks the call if the record isn't there. Each decision is a reconstructable, revocable Ed25519-signed workpaper (Claim Credential), not a certificate of truth. Also extracts and verifies claims and scans documents. Connects over MCP Streamable HTTP, so there is nothing to install.
 homepage: https://veritier.ai
 metadata:
   openclaw:
@@ -27,11 +27,13 @@ metadata:
     obtain_key_url: https://veritier.ai/dashboard
 ---
 
-# Veritier - AI Fact-Checking Skill
+# Veritier — Agent Trust Gate
 
-Veritier pulls the falsifiable claims out of text and documents, checks each one against live web evidence or references you supply, and returns a verdict, a confidence score, and its sources. It also scans PDFs and images for signs of manipulation. When an agent is about to act on a claim, `attest_action` looks it up in a system of record and blocks the call if the record isn't there.
+Agents should not act on a claim without a gate and evidence. Veritier's **Agent Trust Gate** (`attest_action`) looks the action up in a system of record — npm, PyPI, CourtListener, SEC EDGAR, the U.S. Code, or a policy corpus you supply — and blocks the call if the record isn't there. Each gate decision is recorded as a **Claim Credential**: a reconstructable, revocable Ed25519-signed workpaper that proves what was checked. It is proof of the gate decision, not a certificate of truth.
 
-Reach for this skill before you publish an answer, when you are auditing AI-generated text for hallucinations, when a user hands you a document you have no reason to trust, or right before the agent runs a tool call.
+The same API can extract and verify claims against live web evidence or references you supply, and scan PDFs and images for signs of manipulation. Use those when you need an evidence check or a hallucination audit — they never fail-close. `attest_action` is the control that can stop the agent.
+
+Reach for this skill right before the agent runs a tool call, before you publish an answer, when you are auditing AI-generated text, or when a user hands you a document you have no reason to trust.
 
 ## Skill Files
 
@@ -55,27 +57,27 @@ curl -s https://veritier.ai/skill.md > ~/.skills/veritier/SKILL.md
 
 ## When to Use This Skill
 
+**`attest_action`** is the Agent Trust Gate — the one that can stop the agent. Use it when a tool call depends on a record actually existing: an npm or PyPI package, a court opinion, an SEC filing, a section of the U.S. Code, or a policy corpus you supply. It returns a decision and a signed workpaper (Claim Credential) before the agent proceeds. A `block` decision means the call must not run. Verify never fail-closes; attest does.
+
 **`extract_text`** pulls the checkable claims out of a block of text so you can decide which ones are worth verifying. Extraction draws down a separate monthly allowance from verification, so it is the inexpensive way to triage a large body of content.
 
-Reach for **`verify_text`** when the accuracy of a specific statement matters:
+Reach for **`verify_text`** when you need an evidence check (supporting, not a gate):
 - A claim in a draft response has to be checked before you send it
 - A user has shared a statement, article, or paragraph and wants to know whether it holds up
 - AI-generated content needs an audit for hallucinations
 - The claim should be checked against the user's own documents rather than the open web. Set `grounding_mode` to `references` and pass the material in `grounding_references`.
 
-`action_id` is optional on verify. Passing it mints a Claim Credential for the record. Verdicts do not change and nothing is blocked, because verify never fail-closes.
+`action_id` is optional on verify. Passing it mints an informational Claim Credential for the record — a signed workpaper of what was checked, not a gate. Verdicts do not change and nothing is blocked, because verify never fail-closes.
 
 **`extract_document`** and **`verify_document`** do the same work when the source is a URL rather than raw text. `verify_document` takes the same optional `action_id`.
 
 **`validate`** scans a PDF or image for signs of tampering. Run it before you trust the text you pull out of a document a user handed you.
 
-**`attest_action`** is the one that can stop the agent. Use it when a tool call depends on a record actually existing: an npm or PyPI package, a court opinion, an SEC filing, a section of the U.S. Code, or a policy corpus you supply. It returns a decision and a signed Claim Credential before the agent proceeds, and a `block` decision means the call must not run.
-
 Do **not** use Veritier for:
 - Opinions, predictions, or subjective statements. It only evaluates claims that can be proven true or false.
 - Real-time event data that may not be indexed yet
 - Fail-closing on the result of `verify_text`. Use `attest_action` when the call has to be gated.
-- Treating a Claim Credential as a judicial finding or a discharge of duty
+- Treating a Claim Credential as a certificate of truth, a judicial finding, or a discharge of duty
 
 ---
 
@@ -267,7 +269,7 @@ Scans a document for signs that it has been altered. The scan reads the file's m
 
 ### `attest_action`
 
-Looks a tool call up in a named system of record before the agent runs it, and returns a decision together with a signed Claim Credential. Each material claim draws down one unit of `claimsPerMonth`. This is a gate rather than a fact-checker, so it does not replace `verify_text`.
+Looks a tool call up in a named system of record before the agent runs it — the Agent Trust Gate — and returns a decision together with a signed workpaper (Claim Credential). The credential is reconstructable, revocable Ed25519 proof of the gate decision, not a certificate of truth. Each material claim draws down one unit of `claimsPerMonth`. This is a gate rather than a fact-checker, so it does not replace `verify_text`.
 
 | Parameter         | Type   | Required | Description |
 |-------------------|--------|----------|-------------|
@@ -299,7 +301,7 @@ On MCP, `attest_action` takes text only and always answers synchronously. Passin
 
 **Output:** the `decision`, the material claims behind it, `credential.id`, and a `credential.verify_url` of the form `https://veritier.ai/c/crc_…`. An `execution` block carries the `mode`, the `input_sha256` of what was attested, and the signing `kid`.
 
-Anyone can reconstruct the workpaper with `GET https://api.veritier.ai/v1/credentials/{id}`, and no API key is needed to do it. Credentials stay retrievable for 400 days. Signatures are checked against the JWKS at `GET https://api.veritier.ai/v1/credentials/.well-known/jwk`, which publishes the current and previous keys. The issuer can revoke a credential with `POST https://api.veritier.ai/v1/credentials/{id}/revoke` using the key that minted it. The public GET keeps working afterwards and reports `revoked: true`.
+Anyone can reconstruct the signed workpaper with `GET https://api.veritier.ai/v1/credentials/{id}`, and no API key is needed to do it. Credentials stay retrievable for 400 days. Signatures are Ed25519 and are checked against the JWKS at `GET https://api.veritier.ai/v1/credentials/.well-known/jwk`, which publishes the current and previous keys. The issuer can revoke a credential with `POST https://api.veritier.ai/v1/credentials/{id}/revoke` using the key that minted it. The public GET keeps working afterwards and reports `revoked: true`. The workpaper is proof of the gate decision, not a certificate of truth.
 
 ---
 

@@ -1,6 +1,6 @@
-# Veritier - Python Fact-Checking Examples
+# Veritier - Python Agent Trust Gate Examples
 
-Runnable Python examples for the **Veritier API**. They extract claims from text, fact-check them against evidence, scan documents for tampering, and gate a tool call before an agent runs it.
+Runnable Python examples for the **Veritier API**. They gate a tool call before an agent runs it, extract claims from text, fact-check them against evidence, and scan documents for tampering.
 
 📦 **API Docs:** [veritier.ai/docs](https://veritier.ai/docs) · 🔑 **Get your free key:** [veritier.ai/register](https://veritier.ai/register)
 
