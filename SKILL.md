@@ -1,6 +1,6 @@
 ---
 name: veritier
-version: 3.4.1
+version: 3.5.0
 description: Fact-check text and documents against live web evidence or your own private references, pull the checkable claims out of a draft, and scan files for signs of manipulation. Before an agent acts on a claim, attest_action looks it up in a system of record - npm, PyPI, CourtListener, SEC EDGAR, the U.S. Code, or a policy corpus you supply - and blocks the call if the record isn't there. Connects over MCP Streamable HTTP, so there is nothing to install.
 homepage: https://veritier.ai
 metadata:
