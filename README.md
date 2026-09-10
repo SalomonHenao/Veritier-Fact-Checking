@@ -225,8 +225,9 @@ Clients that need a local subprocess can use the [stdio proxy](python/mcp/) inst
 | **Free** | $0 | 10 | 25 | 100 | 5 |
 | **Pro** | $19.99/mo | 60 | 500 | 2,000 | 100 |
 | **Business** | $249.99/mo | 300 | 10,000 | 50,000 | 2,000 |
+| **Enterprise** | Contact us | Custom | Custom | Custom | Custom |
 
-Upgrade anytime at [veritier.ai/dashboard](https://veritier.ai/dashboard) - takes effect immediately.
+Upgrade anytime at [veritier.ai/dashboard](https://veritier.ai/dashboard) — takes effect immediately. Enterprise is custom — [contact us](https://veritier.ai).
 
 ---
 

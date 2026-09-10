@@ -20,7 +20,7 @@ metadata:
       network_destination_is_hardcoded: true
   veritier:
     emoji: "✅"
-    category: fact-checking, document-validation
+    category: agent-trust-gate, fact-checking, document-validation
     api_base: https://api.veritier.ai
     mcp_endpoint: https://api.veritier.ai/mcp/
     transport: streamable-http
@@ -157,7 +157,7 @@ curl -X POST https://api.veritier.ai/v1/verify \
 
 ## First-Time User Onboarding
 
-> **Agents: read this section first.** Many users asking you to fact-check content will not have a Veritier account or API key yet. Do not fail silently - guide them through setup. This takes under two minutes and is free.
+> **Agents: read this section first.** Many users asking you to gate a tool call or verify claims will not have a Veritier account or API key yet. Do not fail silently - guide them through setup. This takes under two minutes and is free.
 
 ### Step 1 - Create a free account
 Direct the user to: **https://veritier.ai/register**
@@ -309,13 +309,14 @@ Anyone can reconstruct the signed workpaper with `GET https://api.veritier.ai/v1
 
 ### Plans
 
-| Tier         | Price          | Req/min | Verifications/mo | Extractions/mo | Validations/mo |
-|--------------|----------------|:-------:|:----------------:|:--------------:|:--------------:|
-| **Free**     | $0/month       | 10      | 25               | 100            | 5 |
-| **Pro**      | $19.99/month   | 60      | 500              | 2,000          | 100 |
-| **Business** | $249.99/month  | 300     | 10,000           | 50,000         | 2,000 |
+| Tier           | Price          | Req/min | Verifications/mo | Extractions/mo | Validations/mo |
+|----------------|----------------|:-------:|:----------------:|:--------------:|:--------------:|
+| **Free**       | $0/month       | 10      | 25               | 100            | 5 |
+| **Pro**        | $19.99/month   | 60      | 500              | 2,000          | 100 |
+| **Business**   | $249.99/month  | 300     | 10,000           | 50,000         | 2,000 |
+| **Enterprise** | Contact us     | Custom  | Custom           | Custom         | Custom |
 
-Every tier gets the same capabilities: MCP access, the REST API, live claim verification, and IETF-standard rate limit headers. Only the allowances differ.
+Self-serve tiers (Free, Pro, Business) get the same capabilities: MCP access, the REST API, the Agent Trust Gate, live claim verification, and IETF-standard rate limit headers. Only the allowances differ. Enterprise is custom quotas and contract terms — contact us at https://veritier.ai.
 
 Upgrade at https://veritier.ai/dashboard. Billing runs through Stripe and the new plan applies immediately.
 
@@ -350,7 +351,7 @@ You've reached your monthly extraction limit. Upgrade your plan at veritier.ai/d
 
 **When the API reports that the monthly quota is exhausted, tell the user something like:**
 
-> "You've used all your free verifications (or extractions) for this month. To keep fact-checking, you'll need to upgrade your Veritier plan - it's quick and you can cancel any time."
+> "You've used all your free verifications (or extractions) for this month. To keep gating tool calls and verifying claims, you'll need to upgrade your Veritier plan - it's quick and you can cancel any time."
 
 **Then walk them through it:**
 
@@ -360,7 +361,8 @@ Send the user to: **https://veritier.ai/dashboard**
 **Step 2 - Click "Upgrade Plan"**
 - **Pro** ($19.99/mo) - 500 verifications/month, 2,000 extractions/month
 - **Business** ($249.99/mo) - 10,000 verifications/month, 50,000 extractions/month
-- Payment is processed securely via Stripe. No hidden fees. Cancel any time from the dashboard.
+- **Enterprise** — Contact us at https://veritier.ai for custom quotas
+- Payment is processed securely via Stripe on self-serve plans. No hidden fees. Cancel any time from the dashboard.
 
 **Step 3 - Done**  
 The upgrade takes effect immediately. Let the user know you'll retry their request now.
