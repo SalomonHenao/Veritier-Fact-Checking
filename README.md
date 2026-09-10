@@ -1,10 +1,10 @@
-# ✅ Veritier - AI Fact-Checking API Examples
+# ✅ Veritier — Agent Trust Gate API Examples
 
-**Stop AI Hallucinations. Verify Claims and Actions in Real Time.**
+**Agents should not act without a gate and evidence.**
 
-Veritier is a **fact-checking API** for text, PDFs, and images. It extracts the claims that can actually be checked, verifies each one against live web evidence or your own private references, and returns a verdict, a confidence score, and its sources.
+Veritier is the **Agent Trust Gate**. Before an agent runs a tool call, `attest_action` looks it up in a system of record — npm, CourtListener, EDGAR, the U.S. Code, or a policy corpus you supply — and blocks the call if the record isn't there. Each decision is a **Claim Credential**: a reconstructable, revocable Ed25519-signed workpaper that proves what the gate checked. It is not a certificate of truth.
 
-When an agent is about to act on a claim, `attest_action` looks it up in a system of record - npm, CourtListener, EDGAR, the U.S. Code - and blocks the call if the record isn't there.
+The same API also extracts and verifies claims in text, PDFs, and images against live web evidence or your own private references, and returns a verdict, a confidence score, and its sources. That path never fail-closes. Use it as supporting evidence — including hallucination audits — not as the control plane.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://python.org)
@@ -136,7 +136,7 @@ Every example here runs as-is in **Python** or **JavaScript**, and the MCP scrip
 | **verify_text** | `POST /v1/verify` | Extract + fact-check. Optional `action_id` informational credential | Verifications |
 | **verify_document** | `POST /v1/verify` | Extract + fact-check from a URL document | Verifications |
 | **validate** | `POST /v1/validate` | Authenticity scan of `document_url`, `document_base64` with `file_name`, or `extracted_text` | Validations |
-| **attest_action** | `POST /v1/attest_action` | Looks the action up in a system of record and returns a decision plus a signed Claim Credential | Verifications |
+| **attest_action** | `POST /v1/attest_action` | Agent Trust Gate: looks the action up in a system of record and returns a decision plus a signed workpaper (Claim Credential) | Verifications |
 | **reconstruct** | `GET /v1/credentials/{id}` | Returns the public workpaper. No API key, retained 400 days | none |
 | **jwks** | `GET /v1/credentials/.well-known/jwk` | Current and previous Ed25519 public keys | none |
 | **revoke** | `POST /v1/credentials/{id}/revoke` | Lets the issuer revoke a credential. The public GET still returns 200, with `revoked: true` | none |
@@ -167,9 +167,9 @@ Claim: 'The Eiffel Tower is located in Berlin.'
 | `block` | The record is missing, or a material claim is contradicted | 200 |
 | `escalate` | A material claim could not be resolved and `on_null` is `"escalate"` | 200 |
 
-A `block` is the gate doing its job rather than a failed request, so treat it as a successful call and refuse the action.
+A `block` is the gate doing its job rather than a failed request, so treat it as a successful call and refuse the action. The Claim Credential is reconstructable, revocable Ed25519 proof of that decision — not a certificate of truth.
 
-Passing `action_id` to `/v1/verify` mints a credential for the record and nothing more. Verify never fail-closes.
+Passing `action_id` to `/v1/verify` mints an informational workpaper for the record and nothing more. Verify never fail-closes.
 
 ---
 
@@ -225,8 +225,9 @@ Clients that need a local subprocess can use the [stdio proxy](python/mcp/) inst
 | **Free** | $0 | 10 | 25 | 100 | 5 |
 | **Pro** | $19.99/mo | 60 | 500 | 2,000 | 100 |
 | **Business** | $249.99/mo | 300 | 10,000 | 50,000 | 2,000 |
+| **Enterprise** | Contact us | Custom | Custom | Custom | Custom |
 
-Upgrade anytime at [veritier.ai/dashboard](https://veritier.ai/dashboard) - takes effect immediately.
+Upgrade anytime at [veritier.ai/dashboard](https://veritier.ai/dashboard) — takes effect immediately. Enterprise is custom — [contact us](https://veritier.ai).
 
 ---
 
@@ -287,17 +288,17 @@ All integration checks passed. Zero quota was consumed.
 - Only ever send your key to `https://api.veritier.ai`.
 - Every input is screened for prompt injection before it reaches the verification engine.
 - Webhook deliveries are signed with HMAC-SHA256 in the `X-Veritier-Signature` header. The signature covers the raw body bytes and nothing else, so it does not extend to any other header. Retries reuse the same `Idempotency-Key` and `X-Veritier-Idempotency-Key`, which lets your receiver drop duplicates.
-- A Claim Credential is a public workpaper at `/c/:id`. It carries no account id and no email address. The issuer can revoke it, after which the public GET still succeeds and reports `revoked: true`. It records what was checked, and it is not a judicial finding.
+- A Claim Credential is a public signed workpaper at `/c/:id` — reconstructable, revocable Ed25519 proof of what the gate (or an informational verify) checked. It carries no account id and no email address. The issuer can revoke it, after which the public GET still succeeds and reports `revoked: true`. It is not a certificate of truth, a judicial finding, or a discharge of duty.
 
 ---
 
 ## 🏗 Use Cases
 
-### Catch LLM Hallucinations
-Run AI-generated text through Veritier before it reaches a reader. [hallucination_audit](python/use-cases/hallucination_audit.py) flags the claims that turn out to be false.
+### Gate a tool call (Agent Trust Gate)
+Call `POST /v1/attest_action` before the agent runs a command, and let it proceed only on `decision=allow`. [gate_tool_call](python/use-cases/gate_tool_call.py) wires that up end to end.
 
-### Truth Firewall (Stop Disinformation)
-User-generated content, news snippets, and social posts can be screened the same way. [disinformation_shield](python/use-cases/disinformation_shield.py) catches false claims before they spread.
+### Informational workpaper on verify
+Pass `action_id` to `POST /v1/verify` and you get a signed workpaper for the record without gating anything. See [informational_credential](python/use-cases/informational_credential.py).
 
 ### Fact-Check Articles
 Give the verification endpoint a URL and it fetches the page for you. [verify_article_url](python/use-cases/verify_article_url.py) then checks every claim it finds there.
@@ -305,11 +306,11 @@ Give the verification endpoint a URL and it fetches the page for you. [verify_ar
 ### Verify Against Internal Documents
 With `grounding_mode: "references"`, claims are checked against material you supply and the web is never searched. [private_references](python/use-cases/private_references.py) shows how the request is put together.
 
-### Gate a tool call
-Call `POST /v1/attest_action` before the agent runs a command, and let it proceed only on `decision=allow`. [gate_tool_call](python/use-cases/gate_tool_call.py) wires that up end to end.
+### Catch LLM Hallucinations
+Supporting audit, not the gate. Run AI-generated text through Veritier before it reaches a reader. [hallucination_audit](python/use-cases/hallucination_audit.py) flags the claims that turn out to be false.
 
-### Informational workpaper on verify
-Pass `action_id` to `POST /v1/verify` and you get a Claim Credential for the record without gating anything. See [informational_credential](python/use-cases/informational_credential.py).
+### Screen user-generated content
+User-generated content, news snippets, and social posts can be checked the same way. [disinformation_shield](python/use-cases/disinformation_shield.py) flags false claims. This is an evidence check, not a fail-closed gate.
 
 ### Content Moderation at Scale
 Thousands of texts can go through in one pass. [batch_verify](python/use-cases/batch_verify.py) handles the throttling and backoff for you.
