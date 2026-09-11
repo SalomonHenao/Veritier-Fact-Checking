@@ -11,7 +11,7 @@ The same API also extracts and verifies claims in text, PDFs, and images against
 [![Node.js 18+](https://img.shields.io/badge/Node.js-18%2B-brightgreen.svg)](https://nodejs.org)
 [![Veritier API](https://img.shields.io/badge/API-veritier.ai-purple.svg)](https://veritier.ai)
 
-🌐 [Website](https://veritier.ai) · 📖 [Documentation](https://veritier.ai/docs) · 🔑 [Get Free API Key](https://veritier.ai/register) · 📊 [Dashboard](https://veritier.ai/dashboard)
+🌐 [Website](https://veritier.ai) · 📖 [Documentation](https://veritier.ai/docs) · 📐 [OpenAPI](https://api.veritier.ai/openapi.json) · 🔑 [Get Free API Key](https://veritier.ai/register) · 📊 [Dashboard](https://veritier.ai/dashboard)
 
 ---
 
@@ -136,7 +136,7 @@ Every example here runs as-is in **Python** or **JavaScript**, and the MCP scrip
 | **verify_text** | `POST /v1/verify` | Extract + fact-check. Optional `action_id` informational credential | Verifications |
 | **verify_document** | `POST /v1/verify` | Extract + fact-check from a URL document | Verifications |
 | **validate** | `POST /v1/validate` | Authenticity scan of `document_url`, `document_base64` with `file_name`, or `extracted_text` | Validations |
-| **attest_action** | `POST /v1/attest_action` | Agent Trust Gate: looks the action up in a system of record and returns a decision plus a signed workpaper (Claim Credential) | Verifications |
+| **attest_action** | `POST /v1/attest_action` | Agent Trust Gate: looks the action up in a system of record and returns a decision plus a signed workpaper (Claim Credential). REST requires `procedure` and `text` **or** `document` (not both); `policy_ground` uses `grounding_references`. MCP is a separate tool schema (see below). | Verifications |
 | **reconstruct** | `GET /v1/credentials/{id}` | Returns the public workpaper. No API key, retained 400 days | none |
 | **jwks** | `GET /v1/credentials/.well-known/jwk` | Current and previous Ed25519 public keys | none |
 | **revoke** | `POST /v1/credentials/{id}/revoke` | Lets the issuer revoke a credential. The public GET still returns 200, with `revoked: true` | none |
@@ -168,6 +168,16 @@ Claim: 'The Eiffel Tower is located in Berlin.'
 | `escalate` | A material claim could not be resolved and `on_null` is `"escalate"` | 200 |
 
 A `block` is the gate doing its job rather than a failed request, so treat it as a successful call and refuse the action. The Claim Credential is reconstructable, revocable Ed25519 proof of that decision — not a certificate of truth.
+
+REST and MCP do **not** share one `attest_action` request schema:
+
+| | REST `POST /v1/attest_action` | MCP `attest_action` tool |
+|--|------------------------------|--------------------------|
+| `procedure` | **Required** (no default) | Optional; defaults to `package_exists` |
+| Input | `text` **XOR** `document` | `text` only |
+| `policy_ground` corpus | `grounding_references` (`{type, content, file_name?}`) | `reference_text` (MCP-only alias, wrapped into one text grounding reference) |
+
+Live contract: [openapi.json](https://api.veritier.ai/openapi.json) (`AttestActionRequest`, API v2.2.0). Skill details: [`SKILL.md`](SKILL.md).
 
 Passing `action_id` to `/v1/verify` mints an informational workpaper for the record and nothing more. Verify never fail-closes.
 

@@ -9,7 +9,11 @@
  *
  * vt_test_ keys send mock_decision=allow. Production keys run package_exists.
  *
+ * REST: procedure is required; provide text XOR document; policy_ground uses
+ * grounding_references (not reference_text). MCP is a separate schema.
+ *
  * Docs: https://veritier.ai/docs#attestation
+ * OpenAPI: https://api.veritier.ai/openapi.json
  */
 
 import "dotenv/config";
