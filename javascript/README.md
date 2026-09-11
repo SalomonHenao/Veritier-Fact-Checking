@@ -2,7 +2,7 @@
 
 Runnable JavaScript examples for the **Veritier API**. They gate a tool call before an agent runs it, extract claims from text, fact-check them against evidence, and scan documents for tampering. Every script calls the API with the native `fetch` in Node.js 18 and later. The only dependencies are `dotenv`, for reading your key out of `.env`, and `express`, which the webhook receiver uses.
 
-📦 **API Docs:** [veritier.ai/docs](https://veritier.ai/docs) · 🔑 **Get your free key:** [veritier.ai/register](https://veritier.ai/register)
+📦 **API Docs:** [veritier.ai/docs](https://veritier.ai/docs) · 📐 **OpenAPI:** [api.veritier.ai/openapi.json](https://api.veritier.ai/openapi.json) · 🔑 **Get your free key:** [veritier.ai/register](https://veritier.ai/register)
 
 ---
 
@@ -75,5 +75,6 @@ cp ../.env.example .env
 ## Need help?
 
 - **Full docs:** [veritier.ai/docs](https://veritier.ai/docs)
+- **Live OpenAPI:** [api.veritier.ai/openapi.json](https://api.veritier.ai/openapi.json)
 - **Python MCP stdio proxy:** [`python/mcp/`](../python/mcp/)
 - **Python examples:** [`python/`](../python/)

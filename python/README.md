@@ -2,7 +2,7 @@
 
 Runnable Python examples for the **Veritier API**. They gate a tool call before an agent runs it, extract claims from text, fact-check them against evidence, and scan documents for tampering.
 
-📦 **API Docs:** [veritier.ai/docs](https://veritier.ai/docs) · 🔑 **Get your free key:** [veritier.ai/register](https://veritier.ai/register)
+📦 **API Docs:** [veritier.ai/docs](https://veritier.ai/docs) · 📐 **OpenAPI:** [api.veritier.ai/openapi.json](https://api.veritier.ai/openapi.json) · 🔑 **Get your free key:** [veritier.ai/register](https://veritier.ai/register)
 
 ---
 
@@ -78,5 +78,6 @@ See [`mcp/README.md`](mcp/) for the client configuration.
 ## Need help?
 
 - **Full docs:** [veritier.ai/docs](https://veritier.ai/docs)
+- **Live OpenAPI:** [api.veritier.ai/openapi.json](https://api.veritier.ai/openapi.json)
 - **MCP:** [`mcp/`](mcp/)
 - **JavaScript:** [`javascript/`](../javascript/)

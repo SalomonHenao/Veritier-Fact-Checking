@@ -75,7 +75,7 @@ MCP tools always answer synchronously, so `use_webhook` has no effect here. Reco
 | `validate` | Authenticity scan. The parameter is named `url` on MCP | Validations |
 | `attest_action` | Looks the action up in a system of record and returns a decision plus a signed Claim Credential | Verifications |
 
-`attest_action` picks its system of record from the `procedure` you pass.
+`attest_action` picks its system of record from the `procedure` you pass. On MCP, `procedure` defaults to `package_exists` when omitted, input is **text-only**, and `policy_ground` takes `reference_text` (an MCP-only alias the server wraps into a single text `GroundingReference`). REST `POST /v1/attest_action` is a different contract: `procedure` is required, input is `text` XOR `document`, and `policy_ground` uses `grounding_references`. See [openapi.json](https://api.veritier.ai/openapi.json) and [`SKILL.md`](../../SKILL.md).
 
 | Procedure | Checks |
 |-----------|--------|
@@ -83,7 +83,7 @@ MCP tools always answer synchronously, so `use_webhook` has no effect here. Reco
 | `citation_exists` | The case exists in CourtListener, and any quoted passage appears in the matched opinion |
 | `filing_exists` | The filing is on SEC EDGAR |
 | `statute_exists` | The section exists in the U.S. Code or the Internal Revenue Code, via Cornell LII |
-| `policy_ground` | The action is supported by the reference text you supply |
+| `policy_ground` | The action is supported by the corpus you supply (`reference_text` on MCP) |
 
 The decision comes back as `allow`, `block`, or `escalate`, and all three arrive with HTTP 200. A `block` means the gate fired and the agent must not run the call.
 

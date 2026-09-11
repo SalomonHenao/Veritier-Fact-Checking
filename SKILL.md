@@ -1,6 +1,6 @@
 ---
 name: veritier
-version: 3.4.1
+version: 3.4.2
 description: Agent Trust Gate for tool calls. Agents should not act without a gate and evidence. attest_action looks the action up in a system of record - npm, PyPI, CourtListener, SEC EDGAR, the U.S. Code, or a policy corpus you supply - and blocks the call if the record isn't there. Each decision is a reconstructable, revocable Ed25519-signed workpaper (Claim Credential), not a certificate of truth. Also extracts and verifies claims and scans documents. Connects over MCP Streamable HTTP, so there is nothing to install.
 homepage: https://veritier.ai
 metadata:
@@ -41,6 +41,8 @@ Reach for this skill right before the agent runs a tool call, before you publish
 |------|------------|
 | **SKILL.md** (this file) | `https://veritier.ai/skill.md` (this repo: [`SKILL.md`](SKILL.md)) |
 | Examples README | `https://veritier.ai/README.md` (this repo: [`README.md`](README.md)) |
+| Live OpenAPI (API v2.2.0) | [`https://api.veritier.ai/openapi.json`](https://api.veritier.ai/openapi.json) |
+| Interactive API docs | [`https://api.veritier.ai/docs`](https://api.veritier.ai/docs) |
 | Stdio MCP proxy | `https://veritier.ai/veritier_mcp_proxy.py` (this repo: [`python/mcp/veritier_mcp_proxy.py`](python/mcp/veritier_mcp_proxy.py)) |
 | Stdio MCP test | `https://veritier.ai/veritier_mcp_test.py` (this repo: [`python/mcp/veritier_mcp_test.py`](python/mcp/veritier_mcp_test.py)) |
 | REST + webhook samples | [`python/`](python/) and [`javascript/`](javascript/) |
@@ -132,7 +134,7 @@ curl -X POST https://api.veritier.ai/v1/verify \
   -H "Content-Type: application/json" \
   -d '{"text": "Your text here.", "action_id": "tool_call_abc"}'
 
-# Fail-closed attestation (npm/PyPI)
+# Fail-closed attestation (REST: procedure required; text XOR document)
 curl -X POST https://api.veritier.ai/v1/attest_action \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
@@ -271,15 +273,41 @@ Scans a document for signs that it has been altered. The scan reads the file's m
 
 Looks a tool call up in a named system of record before the agent runs it — the Agent Trust Gate — and returns a decision together with a signed workpaper (Claim Credential). The credential is reconstructable, revocable Ed25519 proof of the gate decision, not a certificate of truth. Each material claim draws down one unit of `claimsPerMonth`. This is a gate rather than a fact-checker, so it does not replace `verify_text`.
 
-| Parameter         | Type   | Required | Description |
-|-------------------|--------|----------|-------------|
-| `action_id`       | string | ✅       | Caller's identifier for the tool call. Bound into the credential. |
-| `text`            | string | ✅       | The action payload: install lines, citations, or whatever text the agent is about to act on. |
-| `procedure`       | string | ❌       | Which system of record to check. Defaults to `"package_exists"`. See the procedure table below. |
-| `on_null`         | string | ❌       | What to do when a material claim cannot be resolved either way: `"block"` (default) or `"escalate"`. A claim that comes back false always blocks. |
-| `reference_text`  | string | ❌       | Required for `policy_ground`. The policy or corpus text to ground the action against. |
-| `mock_decision`   | string | ❌       | `"allow"` or `"block"`. Returns a signed credential without running the lookup, and consumes no quota. Accepted on a test key or an Engine dashboard JWT. Production API keys are rejected. Test keys auto-activate `allow` when the field is omitted; a JWT does not. |
-| `deep_audit`      | bool   | ❌       | After a `block` or `escalate`, wait for a web verify workpaper. The decision does not change and the extra claim units are billed. Skipped on `allow` and in mock mode. |
+REST `POST /v1/attest_action` and the MCP `attest_action` tool share decisions and procedures, but **their request fields are not the same**. Do not flatten them into one schema.
+
+#### REST: `POST /v1/attest_action`
+
+Source of truth: live OpenAPI [`AttestActionRequest`](https://api.veritier.ai/openapi.json) (API v2.2.0). Interactive docs: https://api.veritier.ai/docs
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `action_id` | string | ✅ | Caller's identifier for the tool call. Bound into the credential. |
+| `procedure` | string | ✅ | Named lookup. **Required on REST — there is no default.** See the procedure table below. |
+| `text` | string | XOR | Raw action payload (up to 32,000 characters). Provide **`text` or `document`, not both**. |
+| `document` | object | XOR | `{ "type": "text" \| "url" \| "base64", "content": "...", "file_name"? }`. Same XOR as extract/verify. |
+| `grounding_references` | array | ❌ | Required when `procedure` is `policy_ground`. Up to 10 items of `{ "type", "content", "file_name"? }`. Ignored for the other procedures. REST has **no** `reference_text` field. |
+| `on_null` | string | ❌ | What to do when a material claim cannot be resolved either way: `"block"` (default) or `"escalate"`. A claim that comes back false always blocks. |
+| `mock_decision` | string | ❌ | `"allow"` or `"block"`. Returns a signed credential without running the lookup, and consumes no quota. Accepted on a test key or an Engine dashboard JWT. Production API keys are rejected. Test keys auto-activate `allow` when the field is omitted; a JWT does not. |
+| `deep_audit` | bool | ❌ | After a `block` or `escalate`, wait for a web verify workpaper. The decision does not change and the extra claim units are billed. Skipped on `allow` and in mock mode. |
+| `tool` | object | ❌ | Optional `{ "name", "payload_json"? }`. Hashed into the credential, never executed. REST and Engine only. |
+| `run_validate` | bool | ❌ | If true and a URL or base64 document is present, run forensic authenticity first. `fraudulent` or `suspicious` blocks. REST and Engine only. |
+| `use_webhook` | bool | ❌ | If true and a Dashboard webhook is configured, return 202 after the procedure completes, then POST the signed result. REST only. |
+
+#### MCP: `attest_action` tool
+
+Hosted MCP (`https://api.veritier.ai/mcp/`) and the stdio proxy. Always synchronous: `use_webhook` has no effect.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `action_id` | string | ✅ | Caller's identifier for the tool call. Bound into the credential. |
+| `text` | string | ✅ | Action payload. **MCP is text-only** — there is no `document` argument. |
+| `procedure` | string | ❌ | Named lookup. **Defaults to `"package_exists"` when omitted** (Python default on the MCP tool). |
+| `reference_text` | string | ❌ | **MCP-only alias.** Required when `procedure` is `policy_ground`. The MCP layer wraps this string into a single text `GroundingReference` before `compose_claims`. Do **not** send `reference_text` on REST — use `grounding_references` there. |
+| `on_null` | string | ❌ | `"block"` (default) or `"escalate"`. A claim that comes back false always blocks. |
+| `mock_decision` | string | ❌ | `"allow"` or `"block"`. Test key (`vt_test_...`) only on MCP. Test keys auto-activate `allow` when omitted. |
+| `deep_audit` | bool | ❌ | Same meaning as REST. Works on both MCP and REST. |
+
+`run_validate`, `document`, `tool`, and `grounding_references` are REST and Engine only. MCP does not accept those fields.
 
 | Procedure | Checks |
 |-----------|--------|
@@ -287,7 +315,7 @@ Looks a tool call up in a named system of record before the agent runs it — th
 | `citation_exists` | The case exists in CourtListener, and any quoted passage actually appears in the matched opinion. This is the public record, not Westlaw. |
 | `filing_exists` | The filing is on SEC EDGAR. |
 | `statute_exists` | The section exists in the U.S. Code or the Internal Revenue Code, via Cornell LII. |
-| `policy_ground` | The action is supported by the reference text you supply. |
+| `policy_ground` | The action is supported by the corpus you supply. REST: `grounding_references`. MCP: `reference_text` (wrapped into one text grounding reference). |
 
 | `decision` | What it means | What the agent should do |
 |------------|---------------|--------------------------|
@@ -296,8 +324,6 @@ Looks a tool call up in a named system of record before the agent runs it — th
 | `escalate` | A material claim could not be resolved and `on_null` is `"escalate"`. | Hand the decision to a human. |
 
 All three decisions come back as HTTP 200. A `block` is the gate doing its job, not a failed request.
-
-On MCP, `attest_action` takes text only and always answers synchronously. Passing `use_webhook` has no effect. The `run_validate`, `document`, and `tool` fields are REST and Engine only. `deep_audit` works on both REST and MCP.
 
 **Output:** the `decision`, the material claims behind it, `credential.id`, and a `credential.verify_url` of the form `https://veritier.ai/c/crc_…`. An `execution` block carries the `mode`, the `input_sha256` of what was attested, and the signing `kid`.
 
@@ -569,4 +595,6 @@ Test mode understands webhooks, so you can exercise the whole async path before 
 
 ## Full Documentation
 
-https://veritier.ai/docs
+- Product docs: https://veritier.ai/docs
+- Live OpenAPI (API v2.2.0): https://api.veritier.ai/openapi.json
+- Interactive API: https://api.veritier.ai/docs
